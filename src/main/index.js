@@ -1,15 +1,41 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import icon from '../../resources/icon.ico'
+import axios from 'axios'
+import setCookieParser from 'set-cookie-parser'
+import startImageProxy from './image-proxy'
 
-function createWindow() {
-  // Create the browser window.
+const PARTITION_NAME = 'persist:bilibili'
+
+const parseCookies = (setCookieHeaders) => {
+  return setCookieParser.parse(setCookieHeaders).map((cookie) => {
+    const result = {
+      url: 'https://bilibili.com',
+      name: cookie.name,
+      value: cookie.value,
+      path: cookie.path || '/'
+    }
+
+    if (cookie.domain) {
+      result.domain = cookie.domain.startsWith('.') ? cookie.domain : `.${cookie.domain}`
+    }
+
+    if (cookie.expires) {
+      result.expirationDate = cookie.expires.getTime() / 1000
+    }
+
+    return result
+  })
+}
+
+const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
     autoHideMenuBar: true,
+    icon: join(__dirname, '../../resources/icon.ico'),
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -18,6 +44,7 @@ function createWindow() {
   })
 
   mainWindow.on('ready-to-show', () => {
+    mainWindow.maximize()
     mainWindow.show()
   })
 
@@ -26,8 +53,6 @@ function createWindow() {
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -35,40 +60,77 @@ function createWindow() {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
+  const customSession = session.fromPartition(PARTITION_NAME)
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  // 生成登录二维码
+  ipcMain.handle('qrcode-generate', async () => {
+    const url = 'https://passport.bilibili.com/x/passport-login/web/qrcode/generate'
+    const response = await axios.get(url)
+    return response.data
+  })
 
+  // 轮询登录二维码状态
+  ipcMain.handle('qrcode-poll', async (event, qrcode_key) => {
+    const url = 'https://passport.bilibili.com/x/passport-login/web/qrcode/poll'
+    const response = await axios.get(url, {
+      params: {
+        qrcode_key
+      }
+    })
+    return {
+      'set-cookie': response.headers['set-cookie'],
+      data: response.data
+    }
+  })
+
+  // 设置Cookie
+  ipcMain.handle('set-cookie', async (event, setCookie) => {
+    const cookies = parseCookies(setCookie)
+    for (const cookie of cookies) {
+      await customSession.cookies.set(cookie)
+    }
+  })
+
+  // 获取Cookie
+  ipcMain.handle('get-cookie', async (event, itemName) => {
+    const cookies = await customSession.cookies.get({
+      url: 'https://www.bilibili.com',
+      name: itemName
+    })
+    return cookies[0]
+  })
+
+  // 获取首页导航信息
+  ipcMain.handle('get-nav-info', async () => {
+    const url = 'https://api.bilibili.com/x/web-interface/nav'
+    const cookies = await customSession.cookies.get({
+      url: 'https://www.bilibili.com',
+      name: 'SESSDATA'
+    })
+    const response = await axios.get(url, {
+      headers: {
+        Cookie: `SESSDATA=${cookies[0].value}`
+      }
+    })
+    return response.data
+  })
+
+  startImageProxy(3001)
   createWindow()
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

@@ -13,6 +13,9 @@ asarUnpack:
 win:
   executableName: bilibili-video-management-tool
 nsis:
+  oneClick: false
+  perMachine: true
+  allowToChangeInstallationDirectory: true
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
