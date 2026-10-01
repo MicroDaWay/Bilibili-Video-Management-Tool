@@ -85,6 +85,7 @@ const handleLogin = async () => {
 
 onMounted(async () => {
   await getNavInfo()
+  localStorage.setItem('isLogin', navInfo.value.isLogin)
 })
 </script>
 
@@ -177,6 +178,7 @@ onMounted(async () => {
     width: calc(1 / 6 * 100%);
     height: 100%;
     transition: all 0.3s;
+    flex-shrink: 0;
 
     &.is-collapse {
       width: calc(1 / 24 * 100%);
@@ -204,6 +206,8 @@ onMounted(async () => {
 
   .main-container {
     flex: 1;
+    min-width: 0;
+    overflow-x: auto;
 
     .main-header {
       display: flex;

@@ -5,6 +5,7 @@ import icon from '../../resources/icon.ico'
 import axios from 'axios'
 import setCookieParser from 'set-cookie-parser'
 import startImageProxy from './image-proxy'
+import { addPlan, deletePlan, getAllPlans, initDatabase, updatePlan } from './database'
 
 const PARTITION_NAME = 'persist:bilibili'
 
@@ -71,14 +72,27 @@ app.whenReady().then(() => {
   // 生成登录二维码
   ipcMain.handle('qrcode-generate', async () => {
     const url = 'https://passport.bilibili.com/x/passport-login/web/qrcode/generate'
-    const response = await axios.get(url)
+    const headers = {
+      Referer: 'https://www.bilibili.com/',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
+    }
+    const response = await axios.get(url, {
+      headers
+    })
     return response.data
   })
 
   // 轮询登录二维码状态
   ipcMain.handle('qrcode-poll', async (event, qrcode_key) => {
     const url = 'https://passport.bilibili.com/x/passport-login/web/qrcode/poll'
+    const headers = {
+      Referer: 'https://www.bilibili.com/',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
+    }
     const response = await axios.get(url, {
+      headers,
       params: {
         qrcode_key
       }
@@ -108,19 +122,44 @@ app.whenReady().then(() => {
 
   // 获取首页导航信息
   ipcMain.handle('get-nav-info', async () => {
-    const url = 'https://api.bilibili.com/x/web-interface/nav'
     const cookies = await customSession.cookies.get({
       url: 'https://www.bilibili.com',
       name: 'SESSDATA'
     })
+    const url = 'https://api.bilibili.com/x/web-interface/nav'
+    const headers = {
+      Cookie: `SESSDATA=${cookies[0].value}`,
+      Referer: 'https://www.bilibili.com/',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
+    }
     const response = await axios.get(url, {
-      headers: {
-        Cookie: `SESSDATA=${cookies[0].value}`
-      }
+      headers
     })
     return response.data
   })
 
+  // 新增计划
+  ipcMain.handle('plan:add', async (event, formData) => {
+    await addPlan(formData)
+  })
+
+  // 更新计划
+  ipcMain.handle('plan:update', async (event, formData) => {
+    await updatePlan(formData)
+  })
+
+  // 获取所有计划
+  ipcMain.handle('plan:get-all', () => {
+    return getAllPlans()
+  })
+
+  // 删除计划
+  ipcMain.handle('plan:delete', async (event, id) => {
+    await deletePlan(id)
+  })
+
+  initDatabase()
   startImageProxy(3001)
   createWindow()
 
