@@ -4,13 +4,7 @@ import { app } from 'electron'
 
 let db
 
-export const initDatabase = () => {
-  const dbPath = path.join(app.getPath('userData'), 'bilibili.db')
-  db = new Database(dbPath)
-  // 开启 WAL
-  db.pragma('journal_mode = WAL')
-
-  // 建表
+const createPlanTable = (db) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS plan (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,7 +21,33 @@ export const initDatabase = () => {
       updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
     )
   `)
-  console.log('SQLite:', dbPath)
+}
+
+const createManuscriptTable = (db) => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS manuscript (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      bvid TEXT NOT NULL,
+      title TEXT NOT NULL,
+      cover TEXT NOT NULL,
+      tag TEXT NOT NULL,
+      view INTEGER NOT NULL DEFAULT 0,
+      ptime TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    )
+    `)
+}
+
+export const initDatabase = () => {
+  const dbPath = path.join(app.getPath('userData'), 'bilibili.db')
+  db = new Database(dbPath)
+  // 开启 WAL
+  db.pragma('journal_mode = WAL')
+
+  // 建表
+  createPlanTable(db)
+  createManuscriptTable(db)
   return db
 }
 
@@ -58,16 +78,24 @@ export const addPlan = (form) => {
 export const updatePlan = (form) => {
   const db = getDatabase()
   db.prepare(
-    "UPDATE plan SET event_name = ?, event_start_time = ?, event_end_time = ?, event_rules = ?, money = ?, tag = ?, updated_at = datetime('now', 'localtime') WHERE id = ?"
+    "UPDATE plan SET event_name = ?, event_start_time = ?, event_end_time = ?, event_rules = ?, post_count = ?, view = ?, money = ?, tag = ?, search_time = ?, updated_at = datetime('now', 'localtime') WHERE id = ?"
   ).run(
     form.event_name,
     form.event_start_time,
     form.event_end_time,
     form.event_rules,
+    form.post_count,
+    form.view,
     form.money,
     form.tag,
+    form.search_time,
     form.id
   )
+}
+
+export const getPlan = (tag) => {
+  const db = getDatabase()
+  return db.prepare('SELECT * FROM plan WHERE tag LIKE ?').get(`%${tag}%`)
 }
 
 export const getAllPlans = () => {
@@ -78,4 +106,11 @@ export const getAllPlans = () => {
 export const deletePlan = (id) => {
   const db = getDatabase()
   db.prepare('DELETE FROM plan WHERE id = ?').run(id)
+}
+
+export const addManuscript = (item) => {
+  const db = getDatabase()
+  db.prepare(
+    'INSERT INTO manuscript (bvid, title, cover, tag, view, ptime) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(item.bvid, item.title, item.cover, item.tag, item.view, item.ptime)
 }

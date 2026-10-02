@@ -1,5 +1,5 @@
 <script setup>
-import { House, Fold, Expand, Star } from '@element-plus/icons-vue'
+import { House, Fold, Expand, Star, Memo } from '@element-plus/icons-vue'
 import { nextTick, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import { sleep } from '@/utils'
@@ -103,10 +103,15 @@ onMounted(async () => {
             <el-icon><House /></el-icon>
             <span class="home">首页</span>
           </el-menu-item>
+          <el-menu-item index="/manuscript-management">
+            <el-icon><Memo /></el-icon>
+            <span class="manuscript-management">稿件管理</span>
+          </el-menu-item>
           <el-menu-item index="/hot-activities">
             <el-icon><Star /></el-icon>
             <span class="hot-activities">热门活动</span>
           </el-menu-item>
+
           <!-- <el-sub-menu index="2">
             <template #title>
               <el-icon><location /></el-icon>
@@ -151,6 +156,15 @@ onMounted(async () => {
     align-center
     :close-on-press-escape="false"
     :close-on-click-modal="false"
+    style="
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 400px;
+      font-size: 1.2rem;
+    "
   >
     <span>扫描二维码登录</span>
     <div class="qrcode-container">
@@ -196,7 +210,8 @@ onMounted(async () => {
         }
 
         .home,
-        .hot-activities {
+        .hot-activities,
+        .manuscript-management {
           font-size: 1.2rem;
           margin-left: 4px;
         }
@@ -268,20 +283,5 @@ onMounted(async () => {
   .tips-2 {
     font-size: 0.8rem;
   }
-}
-</style>
-
-<style>
-.el-dialog {
-  border-radius: 20px;
-}
-
-.el-dialog__body {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 400px;
-  font-size: 1.2rem;
 }
 </style>

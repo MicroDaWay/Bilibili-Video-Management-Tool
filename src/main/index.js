@@ -1,11 +1,12 @@
-import { app, shell, BrowserWindow, ipcMain, session } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, session, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.ico'
 import axios from 'axios'
 import setCookieParser from 'set-cookie-parser'
 import startImageProxy from './image-proxy'
-import { addPlan, deletePlan, getAllPlans, initDatabase, updatePlan } from './database'
+import { addPlan, deletePlan, getAllPlans, getPlan, initDatabase, updatePlan } from './database'
+import { formatTime, sleep } from '../renderer/src/utils'
 
 const PARTITION_NAME = 'persist:bilibili'
 
@@ -67,6 +68,11 @@ app.whenReady().then(() => {
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+  })
+
+  ipcMain.handle('dialog:show-message-box', async (event, option) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    return await dialog.showMessageBox(win, { ...option })
   })
 
   // 生成登录二维码
@@ -149,6 +155,12 @@ app.whenReady().then(() => {
     await updatePlan(formData)
   })
 
+  // 获取单个计划
+  ipcMain.handle('plan:get', async (event, tag) => {
+    console.log('plan:get', await getPlan(tag))
+    // return await getPlan(tag)
+  })
+
   // 获取所有计划
   ipcMain.handle('plan:get-all', () => {
     return getAllPlans()
@@ -157,6 +169,88 @@ app.whenReady().then(() => {
   // 删除计划
   ipcMain.handle('plan:delete', async (event, id) => {
     await deletePlan(id)
+  })
+
+  // 搜索稿件
+  ipcMain.handle('search-manuscripts', async (event, postTag) => {
+    let count = 0
+    let totalView = 0
+
+    try {
+      let pn = 1
+      let postTime = null
+      const result = await getPlan(postTag)
+      if (!result) return false
+      const { event_start_time, event_end_time } = result
+
+      while (true) {
+        await sleep(1)
+        const cookies = await customSession.cookies.get({
+          url: 'https://www.bilibili.com',
+          name: 'SESSDATA'
+        })
+        const url = 'https://member.bilibili.com/x/web/archives'
+        const headers = {
+          Cookie: `SESSDATA=${cookies[0].value}`,
+          Referer: `https://member.bilibili.com/platform/upload-manager/article?page=${pn}`,
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
+        }
+        const response = await axios.get(url, {
+          headers,
+          params: {
+            pn,
+            ps: 20
+          }
+        })
+
+        const resultData = response.data
+        const arc_audits = resultData.data.arc_audits
+
+        for (const item of arc_audits) {
+          const stat = item.stat
+          const archive = item.Archive
+          const bvid = archive.bvid
+          const title = archive.title
+          const cover = archive.cover
+          const tag = archive.tag
+          const view = stat.view
+          const ptime = archive.ptime
+          postTime = archive.ptime
+
+          if (
+            formatTime(ptime) >= event_start_time &&
+            formatTime(ptime) <= event_end_time &&
+            tag.includes(postTag)
+          ) {
+            count++
+            totalView += view
+            event.sender.send('search-manuscripts-progress', {
+              bvid,
+              title,
+              cover,
+              tag,
+              view,
+              ptime
+            })
+          }
+        }
+        if (formatTime(postTime) < event_start_time) {
+          updatePlan({
+            ...result,
+            post_count: count,
+            view: totalView,
+            search_time: formatTime(Math.floor(Date.now() / 1000))
+          })
+          break
+        }
+        pn++
+      }
+    } catch (error) {
+      console.log(error)
+    } finally {
+      event.sender.send('search-manuscripts-complete', { count })
+    }
   })
 
   initDatabase()
