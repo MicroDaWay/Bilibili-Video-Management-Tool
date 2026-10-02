@@ -1,6 +1,7 @@
 <script setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { onMounted, ref } from 'vue'
+import { formatTime } from '@/utils'
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
@@ -19,9 +20,53 @@ const formData = {
 }
 const form = ref({ ...formData })
 
+const hanleMatch = (plan) => {
+  if (!plan.event_rules) return false
+  const POST_COUNT = '投稿量>='
+  const VIEW = '播放量>='
+  let indexOfPostCount = 0
+  let indexOfView = 0
+
+  if (plan.event_rules.includes(POST_COUNT) && plan.event_rules.includes(VIEW)) {
+    indexOfPostCount = plan.event_rules.indexOf(POST_COUNT) + POST_COUNT.length
+    indexOfView = plan.event_rules.indexOf(VIEW) + VIEW.length
+    return (
+      plan.post_count >= +plan.event_rules[indexOfPostCount] &&
+      plan.view >= +plan.event_rules.slice(indexOfView)
+    )
+  } else if (plan.event_rules.includes(POST_COUNT) && !plan.event_rules.includes(VIEW)) {
+    indexOfPostCount = plan.event_rules.indexOf(POST_COUNT) + POST_COUNT.length
+    return plan.post_count >= +plan.event_rules[indexOfPostCount]
+  } else if (plan.event_rules.includes(VIEW) && !plan.event_rules.includes(POST_COUNT)) {
+    indexOfView = plan.event_rules.indexOf(VIEW) + VIEW.length
+    return plan.view >= +plan.event_rules.slice(indexOfView)
+  }
+}
+
 const getPlanList = async () => {
+  const expiredIds = []
+  const validPlans = []
   const plans = await window.ipcRenderer.invoke('plan:get-all')
-  tableData.value = plans
+  const currentTime = formatTime(Math.floor(Date.now() / 1000))
+
+  for (const plan of plans) {
+    if (plan.event_end_time < currentTime) {
+      expiredIds.push(plan.id)
+    } else {
+      validPlans.push(plan)
+    }
+  }
+
+  if (expiredIds.length) {
+    await Promise.all(expiredIds.map((id) => window.ipcRenderer.invoke('plan:delete', id)))
+  }
+
+  tableData.value = validPlans.map((plan) => {
+    return {
+      ...plan,
+      isMatch: hanleMatch(plan)
+    }
+  })
 }
 
 const handleAdd = () => {
@@ -40,6 +85,7 @@ const handleEdit = (row) => {
 
 const handleSubmit = async () => {
   const data = JSON.parse(JSON.stringify(form.value))
+  console.log(data)
   if (isEdit.value) {
     await window.ipcRenderer.invoke('plan:update', { id: rowId.value, ...data })
     ElMessage({
@@ -99,6 +145,7 @@ onMounted(async () => {
       style="width: 100%"
       height="calc(100vh - 160px)"
       :default-sort="{ prop: 'event_end_time', order: 'ascending' }"
+      :row-class-name="({ row }) => (row.isMatch ? 'match-row' : '')"
     >
       <el-table-column prop="event_name" label="活动名称" align="center" min-width="280" />
       <el-table-column prop="tag" label="投稿标签" align="center" min-width="200" />
@@ -110,7 +157,8 @@ onMounted(async () => {
       />
       <el-table-column prop="event_end_time" label="活动结束时间" align="center" min-width="120" />
       <el-table-column prop="event_rules" label="活动规则" align="center" min-width="200" />
-      <el-table-column prop="post_count" label="投稿量" align="center" min-width="80" />
+      <el-table-column prop="post_count" label="投稿量" align="center" min-width="80">
+      </el-table-column>
       <el-table-column prop="view" label="播放量" align="center" min-width="80" />
       <el-table-column prop="money" label="瓜分金额" align="center" min-width="90" />
       <el-table-column prop="search_time" label="查询时间" align="center" min-width="160" />
@@ -180,6 +228,11 @@ onMounted(async () => {
 <style scoped lang="scss">
 .home {
   padding: 20px;
+
+  :deep(.match-row) {
+    background-color: #00b050;
+    color: #000000;
+  }
 
   .add {
     display: flex;

@@ -33,8 +33,8 @@ const parseCookies = (setCookieHeaders) => {
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    minWidth: 900,
+    minHeight: 600,
     show: false,
     autoHideMenuBar: true,
     icon: join(__dirname, '../../resources/icon.ico'),

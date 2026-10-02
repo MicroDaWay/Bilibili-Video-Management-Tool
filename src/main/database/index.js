@@ -67,7 +67,7 @@ export const addPlan = (form) => {
     form.event_start_time,
     form.event_end_time,
     form.event_rules,
-    0,
+    form.post_count,
     0,
     form.money,
     form.tag,

@@ -1,11 +1,22 @@
 <script setup>
-import { onMounted, ref, onUnmounted } from 'vue'
+import { onMounted, ref, onUnmounted, watch, nextTick } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { formatTime, proxyImage } from '../utils'
 
 const postTag = ref('')
 const isSearching = ref(false)
 const manuscriptList = ref([])
+const listRef = ref(null)
+
+watch(
+  () => manuscriptList.value.length,
+  async () => {
+    await nextTick()
+    if (listRef.value) {
+      listRef.value.scrollTop = listRef.value.scrollHeight
+    }
+  }
+)
 
 const handleSearch = async () => {
   if (!postTag.value) {
@@ -34,14 +45,25 @@ const searchManuscriptsComplete = async (event, { count }) => {
   })
 }
 
+let unsubscribeProgress = null
+let unsubscribeComplete = null
+
 onMounted(() => {
-  window.ipcRenderer.on('search-manuscripts-progress', searchManuscriptsProgress)
-  window.ipcRenderer.on('search-manuscripts-complete', searchManuscriptsComplete)
+  unsubscribeProgress = window.ipcRenderer.on(
+    'search-manuscripts-progress',
+    searchManuscriptsProgress
+  )
+  unsubscribeComplete = window.ipcRenderer.on(
+    'search-manuscripts-complete',
+    searchManuscriptsComplete
+  )
 })
 
 onUnmounted(() => {
-  window.ipcRenderer.removeListener('search-manuscripts-progress', searchManuscriptsProgress)
-  window.ipcRenderer.removeListener('search-manuscripts-complete', searchManuscriptsComplete)
+  unsubscribeProgress?.()
+  unsubscribeComplete?.()
+  unsubscribeProgress = null
+  unsubscribeComplete = null
 })
 </script>
 
@@ -67,7 +89,7 @@ onUnmounted(() => {
         搜索
       </el-button>
     </div>
-    <div class="manuscript-list">
+    <div ref="listRef" class="manuscript-list">
       <div v-for="item in manuscriptList" :key="item.bvid" class="manuscript-item">
         <div class="manuscript-cover">
           <a :href="`https://www.bilibili.com/video/${item.bvid}`" target="_blank">
@@ -103,6 +125,7 @@ onUnmounted(() => {
     height: calc(100vh - 160px);
     margin: 10px 0;
     overflow-y: auto;
+    scroll-behavior: smooth;
 
     .manuscript-item {
       display: flex;
