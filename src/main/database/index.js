@@ -36,7 +36,20 @@ const createManuscriptTable = (db) => {
       created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
     )
-    `)
+  `)
+}
+
+const createHotActivitiesTable = (db) => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS hot_activities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      url TEXT NOT NULL,
+      start_time TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    )
+  `)
 }
 
 export const initDatabase = () => {
@@ -48,6 +61,7 @@ export const initDatabase = () => {
   // 建表
   createPlanTable(db)
   createManuscriptTable(db)
+  createHotActivitiesTable(db)
   return db
 }
 
@@ -113,4 +127,18 @@ export const addManuscript = (item) => {
   db.prepare(
     'INSERT INTO manuscript (bvid, title, cover, tag, view, ptime) VALUES (?, ?, ?, ?, ?, ?)'
   ).run(item.bvid, item.title, item.cover, item.tag, item.view, item.ptime)
+}
+
+export const addHotActivities = (item) => {
+  const db = getDatabase()
+  db.prepare('INSERT OR IGNORE INTO hot_activities (name, url, start_time) VALUES (?, ?, ?)').run(
+    item.name,
+    item.url,
+    item.start_time
+  )
+}
+
+export const getAllHotActivities = () => {
+  const db = getDatabase()
+  return db.prepare('SELECT * FROM hot_activities').all()
 }

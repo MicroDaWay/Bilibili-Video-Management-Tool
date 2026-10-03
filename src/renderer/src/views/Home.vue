@@ -85,7 +85,6 @@ const handleEdit = (row) => {
 
 const handleSubmit = async () => {
   const data = JSON.parse(JSON.stringify(form.value))
-  console.log(data)
   if (isEdit.value) {
     await window.ipcRenderer.invoke('plan:update', { id: rowId.value, ...data })
     ElMessage({
@@ -142,7 +141,7 @@ onMounted(async () => {
     <el-table
       :data="tableData"
       border
-      style="width: 100%"
+      style="width: 100%; font-size: 1rem"
       height="calc(100vh - 160px)"
       :default-sort="{ prop: 'event_end_time', order: 'ascending' }"
       :row-class-name="({ row }) => (row.isMatch ? 'match-row' : '')"
@@ -153,15 +152,15 @@ onMounted(async () => {
         prop="event_start_time"
         label="活动开始时间"
         align="center"
-        min-width="120"
+        min-width="130"
       />
-      <el-table-column prop="event_end_time" label="活动结束时间" align="center" min-width="120" />
-      <el-table-column prop="event_rules" label="活动规则" align="center" min-width="200" />
+      <el-table-column prop="event_end_time" label="活动结束时间" align="center" min-width="130" />
+      <el-table-column prop="event_rules" label="活动规则" align="center" min-width="220" />
       <el-table-column prop="post_count" label="投稿量" align="center" min-width="80">
       </el-table-column>
       <el-table-column prop="view" label="播放量" align="center" min-width="80" />
       <el-table-column prop="money" label="瓜分金额" align="center" min-width="90" />
-      <el-table-column prop="search_time" label="查询时间" align="center" min-width="160" />
+      <el-table-column prop="search_time" label="查询时间" align="center" min-width="180" />
       <el-table-column label="操作" align="center" min-width="180" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" @click="handleEdit(row)">编辑</el-button>

@@ -111,27 +111,9 @@ onMounted(async () => {
             <el-icon><Star /></el-icon>
             <span class="hot-activities">热门活动</span>
           </el-menu-item>
-
-          <!-- <el-sub-menu index="2">
-            <template #title>
-              <el-icon><location /></el-icon>
-              <span>2</span>
-            </template>
-            <el-menu-item class="2-1">2-1</el-menu-item>
-            <el-menu-item class="2-2">2-2</el-menu-item>
-            <el-menu-item class="2-3">2-3</el-menu-item>
-            <el-menu-item class="2-4">2-4</el-menu-item>
-            <el-menu-item class="2-5">2-5</el-menu-item>
-            <el-menu-item class="2-6">2-6</el-menu-item>
-            <el-menu-item class="2-7">2-7</el-menu-item>
-            <el-menu-item class="2-8">2-8</el-menu-item>
-            <el-menu-item class="2-9">2-9</el-menu-item>
-            <el-menu-item class="2-10">2-10</el-menu-item>
-          </el-sub-menu> -->
         </el-menu></el-scrollbar
       >
     </div>
-
     <div class="main-container">
       <div class="main-header">
         <el-icon v-show="!isCollapse" class="fold" @click="isCollapse = !isCollapse">

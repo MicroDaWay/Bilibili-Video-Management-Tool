@@ -9,3 +9,7 @@ export const proxyImage = (url) => {
 export const formatTime = (timestamp) => {
   return dayjs.unix(timestamp).format('YYYY-MM-DD HH:mm:ss')
 }
+
+export const getSevenDaysAgo = () => {
+  return dayjs().subtract(7, 'day').format('YYYY-MM-DD')
+}

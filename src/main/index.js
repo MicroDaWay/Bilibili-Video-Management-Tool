@@ -2,11 +2,20 @@ import { app, shell, BrowserWindow, ipcMain, session, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.ico'
-import axios from 'axios'
 import setCookieParser from 'set-cookie-parser'
 import startImageProxy from './image-proxy'
-import { addPlan, deletePlan, getAllPlans, getPlan, initDatabase, updatePlan } from './database'
-import { formatTime, sleep } from '../renderer/src/utils'
+import {
+  addHotActivities,
+  addPlan,
+  deletePlan,
+  getAllHotActivities,
+  getAllPlans,
+  getPlan,
+  initDatabase,
+  updatePlan
+} from './database'
+import { formatTime, getSevenDaysAgo, sleep } from '../renderer/src/utils'
+import { getHotActivities, getManuscripts, getNavInfo, qrcodeGenerate, qrcodePoll } from './api'
 
 const PARTITION_NAME = 'persist:bilibili'
 
@@ -77,36 +86,12 @@ app.whenReady().then(() => {
 
   // 生成登录二维码
   ipcMain.handle('qrcode-generate', async () => {
-    const url = 'https://passport.bilibili.com/x/passport-login/web/qrcode/generate'
-    const headers = {
-      Referer: 'https://www.bilibili.com/',
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
-    }
-    const response = await axios.get(url, {
-      headers
-    })
-    return response.data
+    return await qrcodeGenerate()
   })
 
   // 轮询登录二维码状态
   ipcMain.handle('qrcode-poll', async (event, qrcode_key) => {
-    const url = 'https://passport.bilibili.com/x/passport-login/web/qrcode/poll'
-    const headers = {
-      Referer: 'https://www.bilibili.com/',
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
-    }
-    const response = await axios.get(url, {
-      headers,
-      params: {
-        qrcode_key
-      }
-    })
-    return {
-      'set-cookie': response.headers['set-cookie'],
-      data: response.data
-    }
+    return await qrcodePoll(qrcode_key)
   })
 
   // 设置Cookie
@@ -117,42 +102,23 @@ app.whenReady().then(() => {
     }
   })
 
-  // 获取Cookie
-  ipcMain.handle('get-cookie', async (event, itemName) => {
-    const cookies = await customSession.cookies.get({
-      url: 'https://www.bilibili.com',
-      name: itemName
-    })
-    return cookies[0]
-  })
-
   // 获取首页导航信息
   ipcMain.handle('get-nav-info', async () => {
     const cookies = await customSession.cookies.get({
       url: 'https://www.bilibili.com',
       name: 'SESSDATA'
     })
-    const url = 'https://api.bilibili.com/x/web-interface/nav'
-    const headers = {
-      Cookie: `SESSDATA=${cookies[0].value}`,
-      Referer: 'https://www.bilibili.com/',
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
-    }
-    const response = await axios.get(url, {
-      headers
-    })
-    return response.data
+    return await getNavInfo(cookies)
   })
 
   // 新增计划
-  ipcMain.handle('plan:add', async (event, formData) => {
-    await addPlan(formData)
+  ipcMain.handle('plan:add', (event, formData) => {
+    addPlan(formData)
   })
 
   // 更新计划
-  ipcMain.handle('plan:update', async (event, formData) => {
-    await updatePlan(formData)
+  ipcMain.handle('plan:update', (event, formData) => {
+    updatePlan(formData)
   })
 
   // 获取单个计划
@@ -167,44 +133,30 @@ app.whenReady().then(() => {
   })
 
   // 删除计划
-  ipcMain.handle('plan:delete', async (event, id) => {
-    await deletePlan(id)
+  ipcMain.handle('plan:delete', (event, id) => {
+    deletePlan(id)
   })
 
   // 搜索稿件
   ipcMain.handle('search-manuscripts', async (event, postTag) => {
     let count = 0
     let totalView = 0
+    let pn = 1
+    let postTime = null
+
+    const cookies = await customSession.cookies.get({
+      url: 'https://www.bilibili.com',
+      name: 'SESSDATA'
+    })
+
+    const result = await getPlan(postTag)
+    if (!result) return false
+    const { event_start_time, event_end_time } = result
 
     try {
-      let pn = 1
-      let postTime = null
-      const result = await getPlan(postTag)
-      if (!result) return false
-      const { event_start_time, event_end_time } = result
-
       while (true) {
         await sleep(1)
-        const cookies = await customSession.cookies.get({
-          url: 'https://www.bilibili.com',
-          name: 'SESSDATA'
-        })
-        const url = 'https://member.bilibili.com/x/web/archives'
-        const headers = {
-          Cookie: `SESSDATA=${cookies[0].value}`,
-          Referer: `https://member.bilibili.com/platform/upload-manager/article?page=${pn}`,
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
-        }
-        const response = await axios.get(url, {
-          headers,
-          params: {
-            pn,
-            ps: 20
-          }
-        })
-
-        const resultData = response.data
+        const resultData = await getManuscripts(cookies, pn)
         const arc_audits = resultData.data.arc_audits
 
         for (const item of arc_audits) {
@@ -235,6 +187,7 @@ app.whenReady().then(() => {
             })
           }
         }
+
         if (formatTime(postTime) < event_start_time) {
           updatePlan({
             ...result,
@@ -251,6 +204,58 @@ app.whenReady().then(() => {
     } finally {
       event.sender.send('search-manuscripts-complete', { count })
     }
+  })
+
+  // 获取热门活动
+  ipcMain.handle('get-hot-activities', async (event) => {
+    let pn = 1
+    let total = 0
+    let totalPage = 1
+    const sevenDaysAgo = getSevenDaysAgo()
+
+    const cookies = await customSession.cookies.get({
+      url: 'https://www.bilibili.com',
+      name: 'SESSDATA'
+    })
+
+    try {
+      while (pn <= totalPage) {
+        await sleep(1)
+        const result = await getHotActivities(cookies, pn)
+        const { list, page } = result.data
+        const ps = page.ps
+        total = page.total
+        totalPage = Math.ceil(total / ps)
+
+        for (const item of list) {
+          const name = item.name
+          const url = item.act_url
+          const start_time = formatTime(item.stime)
+          if (start_time >= sevenDaysAgo) {
+            addHotActivities({
+              name,
+              url,
+              start_time
+            })
+            event.sender.send('get-hot-activities-progress', {
+              name,
+              url,
+              start_time
+            })
+          }
+        }
+        pn++
+      }
+    } catch (error) {
+      console.log(error)
+    } finally {
+      event.sender.send('get-hot-activities-complete')
+    }
+  })
+
+  // 获取所有热门活动
+  ipcMain.handle('get-all-hot-activities', () => {
+    return getAllHotActivities()
   })
 
   initDatabase()
