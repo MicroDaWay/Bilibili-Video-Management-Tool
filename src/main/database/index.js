@@ -51,6 +51,21 @@ const createHotActivitiesTable = (db) => {
   `)
 }
 
+const createDisqualifiedTable = (db) => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS disqualified (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      bvid TEXT NOT NULL UNIQUE,
+      title TEXT NOT NULL,
+      view TEXT NOT NULL,
+      tag TEXT NOT NULL,
+      disqualified_time TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    )
+  `)
+}
+
 export const initDatabase = () => {
   const dbPath = path.join(app.getPath('userData'), 'bilibili.db')
   db = new Database(dbPath)
@@ -61,6 +76,7 @@ export const initDatabase = () => {
   createPlanTable(db)
   createManuscriptTable(db)
   createHotActivitiesTable(db)
+  createDisqualifiedTable(db)
   return db
 }
 
@@ -168,4 +184,21 @@ export const addHotActivities = (item) => {
 export const getAllHotActivities = () => {
   const db = getDatabase()
   return db.prepare('SELECT * FROM hot_activities').all()
+}
+
+export const addDisqualified = (item) => {
+  const db = getDatabase()
+  db.prepare(
+    'INSERT OR IGNORE INTO disqualified (bvid, title, view, tag, disqualified_time) VALUES (?, ?, ?, ?, ?)'
+  ).run(item.bvid, item.title, item.view, item.tag, item.disqualified_time)
+}
+
+export const getAllDisqualified = () => {
+  const db = getDatabase()
+  return db.prepare('SELECT * FROM disqualified').all()
+}
+
+export const getDisqualified = (bvid) => {
+  const db = getDatabase()
+  return db.prepare('SELECT * FROM disqualified WHERE bvid = ?').get(bvid)
 }

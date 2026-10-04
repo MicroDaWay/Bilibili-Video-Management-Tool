@@ -5,21 +5,39 @@ import icon from '../../resources/icon.ico'
 import setCookieParser from 'set-cookie-parser'
 import startImageProxy from './image-proxy'
 import {
+  addDisqualified,
   addHotActivities,
   addManuscript,
   addPlan,
   deletePlan,
+  getAllDisqualified,
   getAllHotActivities,
   getAllManuscript,
   getAllPlans,
+  getDisqualified,
   getPlan,
   getViewLessOneHundred,
   initDatabase,
   updateManuscript,
   updatePlan
 } from './database'
-import { formatTime, getSevenDaysAgo, sleep } from '../renderer/src/utils'
-import { getHotActivities, getManuscripts, getNavInfo, qrcodeGenerate, qrcodePoll } from './api'
+import {
+  formatTime,
+  formatTime2,
+  formatTime3,
+  getSevenDaysAgo,
+  getToday,
+  sleep
+} from '../renderer/src/utils'
+import {
+  fetchSessionMsgs,
+  getHotActivities,
+  getManuscripts,
+  getNavInfo,
+  qrcodeGenerate,
+  qrcodePoll,
+  searchAll
+} from './api'
 
 const PARTITION_NAME = 'persist:bilibili'
 
@@ -172,7 +190,8 @@ app.whenReady().then(() => {
           if (
             formatTime(ptime) >= event_start_time &&
             formatTime(ptime) <= event_end_time &&
-            tag.includes(postTag)
+            tag.includes(postTag) &&
+            !getDisqualified(bvid)
           ) {
             count++
             totalView += view
@@ -192,7 +211,7 @@ app.whenReady().then(() => {
             ...result,
             post_count: count,
             view: totalView,
-            search_time: formatTime(Math.floor(Date.now() / 1000))
+            search_time: formatTime2(Date.now())
           })
           break
         }
@@ -309,6 +328,68 @@ app.whenReady().then(() => {
   // 获取播放量小于100的稿件
   ipcMain.handle('get-view-less-one-hundred', () => {
     return getViewLessOneHundred()
+  })
+
+  ipcMain.handle('fetch-session-msgs', async (event) => {
+    let end_seqno = ''
+    let has_more = 1
+    let time = getToday()
+    const sevenDaysAgo = getSevenDaysAgo()
+    const cookies = await customSession.cookies.get({
+      url: 'https://www.bilibili.com',
+      name: 'SESSDATA'
+    })
+
+    try {
+      while (has_more && time > sevenDaysAgo) {
+        await sleep(5)
+        const result = await fetchSessionMsgs(cookies, end_seqno)
+        const { messages, min_seqno } = result.data
+        has_more = result.data.has_more
+        end_seqno = min_seqno
+
+        for (const message of messages) {
+          const content = message.content
+          const timestamp = message.timestamp
+          time = formatTime3(timestamp)
+          const text = '由于不符合本次征稿活动的规则，故无法参与本次活动的评选'
+          if (!content.includes(text)) continue
+          const match = content.match(/(BV[a-zA-Z0-9]{10})/)
+
+          if (match) {
+            const bvid = match[1]
+            const res = await searchAll(cookies, bvid)
+            const resultData = res.data.result
+            for (const item of resultData) {
+              if (item.result_type === 'video') {
+                const data = item.data
+                for (const item of data) {
+                  if (item.bvid === bvid) {
+                    const itemData = {
+                      title: item.title,
+                      bvid,
+                      tag: item.tag,
+                      view: item.play + '',
+                      disqualified_time: formatTime(timestamp)
+                    }
+                    addDisqualified(itemData)
+                    event.sender.send('fetch-session-msgs-progress', itemData)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log(error)
+    } finally {
+      event.sender.send('fetch-session-msgs-complete')
+    }
+  })
+
+  ipcMain.handle('get-all-disqualified', () => {
+    return getAllDisqualified()
   })
 
   initDatabase()

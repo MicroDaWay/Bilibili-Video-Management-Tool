@@ -6,6 +6,10 @@ const routes = [
   { path: '/hot-activities', component: () => import('@/views/HotActivities.vue') },
   { path: '/manuscript-management', component: () => import('@/views/ManuscriptManagement.vue') },
   { path: '/update-database', component: () => import('@/views/UpdateDatabase.vue') },
+  {
+    path: '/disqualified-manuscript',
+    component: () => import('@/views/DisqualifiedManuscript.vue')
+  },
   { path: '/view-less-one-hundred', component: () => import('@/views/ViewLessOneHundred.vue') }
 ]
 

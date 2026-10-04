@@ -84,3 +84,41 @@ export const getHotActivities = async (cookies, pn) => {
   })
   return response.data
 }
+
+export const fetchSessionMsgs = async (cookies, end_seqno) => {
+  const SESSDATA = cookies[0].value
+  const url = 'https://api.vc.bilibili.com/svr_sync/v1/svr_sync/fetch_session_msgs'
+  const headers = {
+    Cookie: `SESSDATA=${SESSDATA}`,
+    Referer: `https://message.bilibili.com/`,
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
+  }
+  const response = await axios.get(url, {
+    headers,
+    params: {
+      size: 20,
+      talker_id: 844424930131966,
+      end_seqno
+    }
+  })
+  return response.data
+}
+
+export const searchAll = async (cookies, keyword) => {
+  const SESSDATA = cookies[0].value
+  const url = 'https://api.bilibili.com/x/web-interface/wbi/search/all/v2'
+  const headers = {
+    Cookie: `SESSDATA=${SESSDATA}`,
+    Referer: `https://search.bilibili.com/all?`,
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
+  }
+  const response = await axios.get(url, {
+    headers,
+    params: {
+      keyword
+    }
+  })
+  return response.data
+}

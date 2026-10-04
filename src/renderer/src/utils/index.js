@@ -10,6 +10,18 @@ export const formatTime = (timestamp) => {
   return dayjs.unix(timestamp).format('YYYY-MM-DD HH:mm:ss')
 }
 
+export const formatTime2 = (timestamp) => {
+  return dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')
+}
+
+export const formatTime3 = (timestamp) => {
+  return dayjs.unix(timestamp).format('YYYY-MM-DD')
+}
+
+export const getToday = () => {
+  return dayjs().format('YYYY-MM-DD')
+}
+
 export const getSevenDaysAgo = () => {
   return dayjs().subtract(7, 'day').format('YYYY-MM-DD')
 }

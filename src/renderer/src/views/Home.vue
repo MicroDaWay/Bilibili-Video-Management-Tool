@@ -20,26 +20,26 @@ const formData = {
 }
 const form = ref({ ...formData })
 
+const extractNumbers = (str) => {
+  const matches = str.match(/>=\s*(\d+(?:\.\d+)?)/g)
+  if (!matches) return []
+  return matches.map((m) => Number(m.replace(/>=\s*/, '')))
+}
+
 const hanleMatch = (plan) => {
   if (!plan.event_rules) return false
-  const POST_COUNT = '投稿量>='
-  const VIEW = '播放量>='
-  let indexOfPostCount = 0
-  let indexOfView = 0
-
-  if (plan.event_rules.includes(POST_COUNT) && plan.event_rules.includes(VIEW)) {
-    indexOfPostCount = plan.event_rules.indexOf(POST_COUNT) + POST_COUNT.length
-    indexOfView = plan.event_rules.indexOf(VIEW) + VIEW.length
-    return (
-      plan.post_count >= +plan.event_rules[indexOfPostCount] &&
-      plan.view >= +plan.event_rules.slice(indexOfView)
-    )
-  } else if (plan.event_rules.includes(POST_COUNT) && !plan.event_rules.includes(VIEW)) {
-    indexOfPostCount = plan.event_rules.indexOf(POST_COUNT) + POST_COUNT.length
-    return plan.post_count >= +plan.event_rules[indexOfPostCount]
-  } else if (plan.event_rules.includes(VIEW) && !plan.event_rules.includes(POST_COUNT)) {
-    indexOfView = plan.event_rules.indexOf(VIEW) + VIEW.length
-    return plan.view >= +plan.event_rules.slice(indexOfView)
+  if (
+    (plan.event_rules.includes('投稿量') || plan.event_rules.includes('投稿天数')) &&
+    plan.event_rules.includes('播放量')
+  ) {
+    const result = extractNumbers(plan.event_rules)
+    return plan.post_count >= result[0] && plan.view >= result[1]
+  } else if (plan.event_rules.includes('投稿量') || plan.event_rules.includes('投稿天数')) {
+    const result = extractNumbers(plan.event_rules)
+    return plan.post_count >= result[0]
+  } else if (plan.event_rules.includes('播放量')) {
+    const result = extractNumbers(plan.event_rules)
+    return plan.view >= result[0]
   }
 }
 
