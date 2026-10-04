@@ -60,7 +60,7 @@ export const getManuscripts = async (cookies, pn) => {
     headers,
     params: {
       pn,
-      ps: 20
+      ps: 10
     }
   })
   return response.data

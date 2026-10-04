@@ -27,12 +27,11 @@ const createManuscriptTable = (db) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS manuscript (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      bvid TEXT NOT NULL,
+      bvid TEXT NOT NULL UNIQUE,
       title TEXT NOT NULL,
-      cover TEXT NOT NULL,
       tag TEXT NOT NULL,
       view INTEGER NOT NULL DEFAULT 0,
-      ptime TEXT NOT NULL,
+      post_time TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
     )
@@ -125,8 +124,27 @@ export const deletePlan = (id) => {
 export const addManuscript = (item) => {
   const db = getDatabase()
   db.prepare(
-    'INSERT INTO manuscript (bvid, title, cover, tag, view, ptime) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(item.bvid, item.title, item.cover, item.tag, item.view, item.ptime)
+    'INSERT OR IGNORE INTO manuscript (bvid, title, tag, view, post_time) VALUES (?, ?, ?, ?, ?)'
+  ).run(item.bvid, item.title, item.tag, item.view, item.post_time)
+}
+
+export const updateManuscript = (item) => {
+  const db = getDatabase()
+  const result = db
+    .prepare(
+      "UPDATE manuscript SET title = ?, tag = ?, view = ?, post_time = ?, updated_at = datetime('now', 'localtime') WHERE bvid = ?"
+    )
+    .run(item.title, item.tag, item.view, item.post_time, item.bvid)
+
+  if (result.changes === 0) {
+    return false
+  }
+  return true
+}
+
+export const getAllManuscript = () => {
+  const db = getDatabase()
+  return db.prepare('SELECT * FROM manuscript').all()
 }
 
 export const addHotActivities = (item) => {

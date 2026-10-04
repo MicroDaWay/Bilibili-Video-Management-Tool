@@ -6,12 +6,15 @@ import setCookieParser from 'set-cookie-parser'
 import startImageProxy from './image-proxy'
 import {
   addHotActivities,
+  addManuscript,
   addPlan,
   deletePlan,
   getAllHotActivities,
+  getAllManuscript,
   getAllPlans,
   getPlan,
   initDatabase,
+  updateManuscript,
   updatePlan
 } from './database'
 import { formatTime, getSevenDaysAgo, sleep } from '../renderer/src/utils'
@@ -79,6 +82,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  // dialog弹框
   ipcMain.handle('dialog:show-message-box', async (event, option) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     return await dialog.showMessageBox(win, { ...option })
@@ -119,12 +123,6 @@ app.whenReady().then(() => {
   // 更新计划
   ipcMain.handle('plan:update', (event, formData) => {
     updatePlan(formData)
-  })
-
-  // 获取单个计划
-  ipcMain.handle('plan:get', async (event, tag) => {
-    console.log('plan:get', await getPlan(tag))
-    // return await getPlan(tag)
   })
 
   // 获取所有计划
@@ -209,7 +207,6 @@ app.whenReady().then(() => {
   // 获取热门活动
   ipcMain.handle('get-hot-activities', async (event) => {
     let pn = 1
-    let total = 0
     let totalPage = 1
     const sevenDaysAgo = getSevenDaysAgo()
 
@@ -223,9 +220,7 @@ app.whenReady().then(() => {
         await sleep(1)
         const result = await getHotActivities(cookies, pn)
         const { list, page } = result.data
-        const ps = page.ps
-        total = page.total
-        totalPage = Math.ceil(total / ps)
+        totalPage = Math.ceil(page.total / page.ps)
 
         for (const item of list) {
           const name = item.name
@@ -256,6 +251,59 @@ app.whenReady().then(() => {
   // 获取所有热门活动
   ipcMain.handle('get-all-hot-activities', () => {
     return getAllHotActivities()
+  })
+
+  // 更新数据库
+  ipcMain.handle('update-database', async (event) => {
+    let pn = 1
+    let totalPage = 1
+    const cookies = await customSession.cookies.get({
+      url: 'https://www.bilibili.com',
+      name: 'SESSDATA'
+    })
+
+    try {
+      while (pn <= totalPage) {
+        await sleep(5)
+        const resultData = await getManuscripts(cookies, pn)
+        const arc_audits = resultData.data.arc_audits
+        const page = resultData.data.page
+        totalPage = Math.ceil(page.count / page.ps)
+
+        for (const item of arc_audits) {
+          const stat = item.stat
+          const archive = item.Archive
+          const bvid = archive.bvid
+          const title = archive.title
+          const tag = archive.tag
+          const view = stat.view
+          const ptime = archive.ptime
+          const itemData = {
+            bvid,
+            title,
+            tag,
+            view,
+            post_time: formatTime(ptime)
+          }
+          event.sender.send('update-database-progress', itemData)
+          const result = updateManuscript(itemData)
+          if (!result) {
+            addManuscript(itemData)
+          }
+          console.log(result, itemData)
+        }
+        pn++
+      }
+    } catch (error) {
+      console.log(error)
+    } finally {
+      event.sender.send('update-database-complete')
+    }
+  })
+
+  // 获取所有稿件
+  ipcMain.handle('get-all-manuscript', () => {
+    return getAllManuscript()
   })
 
   initDatabase()

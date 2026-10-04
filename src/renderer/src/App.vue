@@ -1,5 +1,5 @@
 <script setup>
-import { House, Fold, Expand, Star, Memo } from '@element-plus/icons-vue'
+import { House, Fold, Expand, Star, Memo, Coin } from '@element-plus/icons-vue'
 import { nextTick, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import { sleep } from '@/utils'
@@ -111,6 +111,10 @@ onMounted(async () => {
             <el-icon><Star /></el-icon>
             <span class="hot-activities">热门活动</span>
           </el-menu-item>
+          <el-menu-item index="/update-database">
+            <el-icon><Coin /></el-icon>
+            <span class="update-database">更新数据库</span>
+          </el-menu-item>
         </el-menu></el-scrollbar
       >
     </div>
@@ -193,7 +197,8 @@ onMounted(async () => {
 
         .home,
         .hot-activities,
-        .manuscript-management {
+        .manuscript-management,
+        .update-database {
           font-size: 1.2rem;
           margin-left: 4px;
         }
