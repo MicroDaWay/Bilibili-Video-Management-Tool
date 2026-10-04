@@ -5,7 +5,8 @@ const routes = [
   { path: '/home', component: () => import('@/views/Home.vue') },
   { path: '/hot-activities', component: () => import('@/views/HotActivities.vue') },
   { path: '/manuscript-management', component: () => import('@/views/ManuscriptManagement.vue') },
-  { path: '/update-database', component: () => import('@/views/UpdateDatabase.vue') }
+  { path: '/update-database', component: () => import('@/views/UpdateDatabase.vue') },
+  { path: '/view-less-one-hundred', component: () => import('@/views/ViewLessOneHundred.vue') }
 ]
 
 const router = createRouter({

@@ -1,10 +1,11 @@
 <script setup>
-import { House, Fold, Expand, Star, Memo, Coin } from '@element-plus/icons-vue'
+import { House, Fold, Expand, Star, Memo, Coin, Search } from '@element-plus/icons-vue'
 import { nextTick, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import { sleep } from '@/utils'
 import { proxyImage } from './utils'
 import refreshImage from '@/assets/refresh.png'
+import { useRouter } from 'vue-router'
 
 const isCollapse = ref(false)
 const dialogVisible = ref(false)
@@ -83,6 +84,14 @@ const handleLogin = async () => {
   await qrcodePoll()
 }
 
+const router = useRouter()
+
+const handleSearchMenuClick = () => {
+  if (router.currentRoute.value.path !== '/view-less-one-hundred') {
+    router.push('/view-less-one-hundred')
+  }
+}
+
 onMounted(async () => {
   await getNavInfo()
   localStorage.setItem('isLogin', navInfo.value.isLogin)
@@ -115,6 +124,15 @@ onMounted(async () => {
             <el-icon><Coin /></el-icon>
             <span class="update-database">更新数据库</span>
           </el-menu-item>
+          <el-sub-menu index="search" @click="handleSearchMenuClick">
+            <template #title>
+              <el-icon><Search /></el-icon>
+              <span class="search">稿件查询</span>
+            </template>
+            <el-menu-item index="/view-less-one-hundred" class="view-less-one-hundred">
+              播放量小于100的稿件
+            </el-menu-item>
+          </el-sub-menu>
         </el-menu></el-scrollbar
       >
     </div>
@@ -198,9 +216,15 @@ onMounted(async () => {
         .home,
         .hot-activities,
         .manuscript-management,
-        .update-database {
+        .update-database,
+        .search {
           font-size: 1.2rem;
           margin-left: 4px;
+        }
+
+        .view-less-one-hundred {
+          font-size: 1.2rem;
+          background-color: #f6f6f6;
         }
       }
     }

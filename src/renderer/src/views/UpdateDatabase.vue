@@ -54,7 +54,7 @@ onUnmounted(() => {
       :data="tableData"
       border
       :default-sort="{ prop: 'post_time', order: 'descending' }"
-      style="width: 100%; font-size: 1.2rem; height: calc(100vh - 100px); scroll-behavior: smooth"
+      style="width: 100%; font-size: 1.2rem; height: calc(100vh - 100px)"
     >
       <el-table-column prop="post_time" align="center" width="250">
         <template #header>

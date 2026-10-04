@@ -13,6 +13,7 @@ import {
   getAllManuscript,
   getAllPlans,
   getPlan,
+  getViewLessOneHundred,
   initDatabase,
   updateManuscript,
   updatePlan
@@ -290,7 +291,6 @@ app.whenReady().then(() => {
           if (!result) {
             addManuscript(itemData)
           }
-          console.log(result, itemData)
         }
         pn++
       }
@@ -304,6 +304,11 @@ app.whenReady().then(() => {
   // 获取所有稿件
   ipcMain.handle('get-all-manuscript', () => {
     return getAllManuscript()
+  })
+
+  // 获取播放量小于100的稿件
+  ipcMain.handle('get-view-less-one-hundred', () => {
+    return getViewLessOneHundred()
   })
 
   initDatabase()

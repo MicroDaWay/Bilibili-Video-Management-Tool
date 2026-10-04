@@ -147,6 +147,15 @@ export const getAllManuscript = () => {
   return db.prepare('SELECT * FROM manuscript').all()
 }
 
+export const getViewLessOneHundred = () => {
+  const db = getDatabase()
+  return db
+    .prepare(
+      "SELECT * FROM manuscript WHERE view < 100 AND post_time < datetime('now', 'localtime', '-180 days')"
+    )
+    .all()
+}
+
 export const addHotActivities = (item) => {
   const db = getDatabase()
   db.prepare('INSERT OR IGNORE INTO hot_activities (name, url, start_time) VALUES (?, ?, ?)').run(
