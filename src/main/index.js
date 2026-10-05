@@ -9,11 +9,13 @@ import {
   addHotActivities,
   addManuscript,
   addPlan,
+  addRevenue,
   deletePlan,
   getAllDisqualified,
   getAllHotActivities,
   getAllManuscript,
   getAllPlans,
+  getAllRevenue,
   getDisqualified,
   getPlan,
   getViewLessOneHundred,
@@ -34,6 +36,7 @@ import {
   getHotActivities,
   getManuscripts,
   getNavInfo,
+  getRevenueData,
   qrcodeGenerate,
   qrcodePoll,
   searchAll
@@ -167,7 +170,7 @@ app.whenReady().then(() => {
     })
 
     const result = await getPlan(postTag)
-    if (!result) return false
+    if (!result) return true
     const { event_start_time, event_end_time } = result
 
     try {
@@ -195,7 +198,7 @@ app.whenReady().then(() => {
           ) {
             count++
             totalView += view
-            event.sender.send('search-manuscripts-progress', {
+            event.sender.send('search-manuscripts-process', {
               bvid,
               title,
               cover,
@@ -252,7 +255,7 @@ app.whenReady().then(() => {
               url,
               start_time
             })
-            event.sender.send('get-hot-activities-progress', {
+            event.sender.send('get-hot-activities-process', {
               name,
               url,
               start_time
@@ -305,7 +308,7 @@ app.whenReady().then(() => {
             view,
             post_time: formatTime(ptime)
           }
-          event.sender.send('update-database-progress', itemData)
+          event.sender.send('update-database-process', itemData)
           const result = updateManuscript(itemData)
           if (!result) {
             addManuscript(itemData)
@@ -373,7 +376,7 @@ app.whenReady().then(() => {
                       disqualified_time: formatTime(timestamp)
                     }
                     addDisqualified(itemData)
-                    event.sender.send('fetch-session-msgs-progress', itemData)
+                    event.sender.send('fetch-session-msgs-process', itemData)
                   }
                 }
               }
@@ -390,6 +393,48 @@ app.whenReady().then(() => {
 
   ipcMain.handle('get-all-disqualified', () => {
     return getAllDisqualified()
+  })
+
+  ipcMain.handle('get-revenue-data', async (event) => {
+    let currentPage = 1
+    let totalPage = 1
+    const cookies = await customSession.cookies.get({
+      url: 'https://www.bilibili.com',
+      name: 'SESSDATA'
+    })
+
+    try {
+      while (currentPage <= totalPage) {
+        await sleep(5)
+        const res = await getRevenueData(cookies, currentPage)
+        const { page, result } = res.data
+        currentPage = page.currentPage
+        totalPage = page.totalPage
+
+        for (const item of result) {
+          const { ctime, orderNo, label, brokerage, title } = item
+          if (title === '历史贝壳收入一次性报税') continue
+          const itemData = {
+            orderNo,
+            label,
+            title,
+            brokerage,
+            create_time: ctime
+          }
+          addRevenue(itemData)
+          event.sender.send('get-revenue-data-process', itemData)
+        }
+        currentPage++
+      }
+    } catch (error) {
+      console.log(error)
+    } finally {
+      event.sender.send('get-revenue-data-complete')
+    }
+  })
+
+  ipcMain.handle('get-all-revenue', () => {
+    return getAllRevenue()
   })
 
   initDatabase()

@@ -66,6 +66,21 @@ const createDisqualifiedTable = (db) => {
   `)
 }
 
+const createRevenueTable = () => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS revenue (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      orderNo TEXT NOT NULL UNIQUE,
+      label TEXT NOT NULL,
+      title TEXT NOT NULL,
+      brokerage REAL NOT NULL,
+      create_time TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    )
+  `)
+}
+
 export const initDatabase = () => {
   const dbPath = path.join(app.getPath('userData'), 'bilibili.db')
   db = new Database(dbPath)
@@ -77,6 +92,7 @@ export const initDatabase = () => {
   createManuscriptTable(db)
   createHotActivitiesTable(db)
   createDisqualifiedTable(db)
+  createRevenueTable(db)
   return db
 }
 
@@ -201,4 +217,18 @@ export const getAllDisqualified = () => {
 export const getDisqualified = (bvid) => {
   const db = getDatabase()
   return db.prepare('SELECT * FROM disqualified WHERE bvid = ?').get(bvid)
+}
+
+export const addRevenue = (item) => {
+  const db = getDatabase()
+  return db
+    .prepare(
+      'INSERT OR IGNORE INTO revenue (orderNo, label, title, brokerage, create_time) VALUES (?, ?, ?, ?, ?)'
+    )
+    .run(item.orderNo, item.label, item.title, item.brokerage, item.create_time)
+}
+
+export const getAllRevenue = () => {
+  const db = getDatabase()
+  return db.prepare('SELECT * FROM revenue').all()
 }

@@ -29,10 +29,18 @@ const handleSearch = async () => {
   }
   manuscriptList.value = []
   isSearching.value = true
-  await window.ipcRenderer.invoke('search-manuscripts', postTag.value)
+  const result = await window.ipcRenderer.invoke('search-manuscripts', postTag.value)
+  if (result) {
+    await window.ipcRenderer.invoke('dialog:show-message-box', {
+      type: 'info',
+      title: '稿件管理',
+      message: '没有找到符合条件的稿件'
+    })
+    isSearching.value = false
+  }
 }
 
-const searchManuscriptsProgress = (event, item) => {
+const searchManuscriptsProcess = (event, item) => {
   manuscriptList.value.push({ ...item })
 }
 
@@ -45,14 +53,11 @@ const searchManuscriptsComplete = async (event, { count }) => {
   })
 }
 
-let unsubscribeProgress = null
+let unsubscribeProcess = null
 let unsubscribeComplete = null
 
 onMounted(() => {
-  unsubscribeProgress = window.ipcRenderer.on(
-    'search-manuscripts-progress',
-    searchManuscriptsProgress
-  )
+  unsubscribeProcess = window.ipcRenderer.on('search-manuscripts-process', searchManuscriptsProcess)
   unsubscribeComplete = window.ipcRenderer.on(
     'search-manuscripts-complete',
     searchManuscriptsComplete
@@ -60,9 +65,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  unsubscribeProgress?.()
+  unsubscribeProcess?.()
   unsubscribeComplete?.()
-  unsubscribeProgress = null
+  unsubscribeProcess = null
   unsubscribeComplete = null
 })
 </script>

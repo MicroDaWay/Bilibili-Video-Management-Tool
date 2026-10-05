@@ -12,7 +12,7 @@ const getAllHotActivities = async () => {
   tableData.value = result
 }
 
-const getHotActivitiesProgress = (event, item) => {
+const getHotActivitiesProcess = (event, item) => {
   tableData.value.push({ ...item })
 }
 
@@ -29,14 +29,11 @@ const handleClick = async () => {
   await getHotActivities()
 }
 
-let unsubscribeProgress = null
+let unsubscribeProcess = null
 let unsubscribeComplete = null
 
 onMounted(async () => {
-  unsubscribeProgress = window.ipcRenderer.on(
-    'get-hot-activities-progress',
-    getHotActivitiesProgress
-  )
+  unsubscribeProcess = window.ipcRenderer.on('get-hot-activities-process', getHotActivitiesProcess)
   unsubscribeComplete = window.ipcRenderer.on(
     'get-hot-activities-complete',
     getHotActivitiesComplete
@@ -45,9 +42,9 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  unsubscribeProgress?.()
+  unsubscribeProcess?.()
   unsubscribeComplete?.()
-  unsubscribeProgress = null
+  unsubscribeProcess = null
   unsubscribeComplete = null
 })
 </script>

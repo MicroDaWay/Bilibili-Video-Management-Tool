@@ -15,7 +15,7 @@ const getAllManuscript = async () => {
   tableData.value = result
 }
 
-const updateDatabaseProgress = async (event, item) => {
+const updateDatabaseProcess = async (event, item) => {
   tableData.value.push({ ...item })
 }
 
@@ -28,19 +28,19 @@ const updateDatabaseComplete = async () => {
   })
 }
 
-let unsubscribeProgress = null
+let unsubscribeProcess = null
 let unsubscribeComplete = null
 
 onMounted(async () => {
-  unsubscribeProgress = window.ipcRenderer.on('update-database-progress', updateDatabaseProgress)
+  unsubscribeProcess = window.ipcRenderer.on('update-database-process', updateDatabaseProcess)
   unsubscribeComplete = window.ipcRenderer.on('update-database-complete', updateDatabaseComplete)
   await getAllManuscript()
 })
 
 onUnmounted(() => {
-  unsubscribeProgress?.()
+  unsubscribeProcess?.()
   unsubscribeComplete?.()
-  unsubscribeProgress = null
+  unsubscribeProcess = null
   unsubscribeComplete = null
 })
 </script>

@@ -1,5 +1,5 @@
 <script setup>
-import { House, Fold, Expand, Star, Memo, Coin, Search, Lock } from '@element-plus/icons-vue'
+import { House, Fold, Expand, Star, Memo, Coin, Search, Lock, Goods } from '@element-plus/icons-vue'
 import { nextTick, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import { sleep } from '@/utils'
@@ -84,6 +84,13 @@ const handleLogin = async () => {
   await qrcodePoll()
 }
 
+const handleLogout = async () => {
+  console.log('handleLogout')
+  // await window.ipcRenderer.invoke('logout')
+  // await getNavInfo()
+  // localStorage.setItem('isLogin', navInfo.value.isLogin)
+}
+
 const router = useRouter()
 
 const handleSearchMenuClick = () => {
@@ -120,6 +127,10 @@ onMounted(async () => {
             <el-icon><Star /></el-icon>
             <span class="hot-activities">热门活动</span>
           </el-menu-item>
+          <el-menu-item index="/revenue-center">
+            <el-icon><Goods /></el-icon>
+            <span class="revenue-center">收益中心</span>
+          </el-menu-item>
           <el-menu-item index="/update-database">
             <el-icon><Coin /></el-icon>
             <span class="update-database">更新数据库</span>
@@ -148,11 +159,14 @@ onMounted(async () => {
         <el-icon v-show="isCollapse" class="expand" @click="isCollapse = !isCollapse">
           <Expand />
         </el-icon>
-        <el-avatar
-          v-if="navInfo.isLogin"
-          :src="proxyImage(navInfo.face)"
-          class="avatar"
-        ></el-avatar>
+        <el-dropdown v-if="navInfo.isLogin">
+          <el-avatar :src="proxyImage(navInfo.face)" class="avatar"></el-avatar>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-button v-else type="primary" class="login" @click="handleLogin">登录</el-button>
       </div>
       <router-view />
@@ -222,7 +236,8 @@ onMounted(async () => {
         .manuscript-management,
         .update-database,
         .search,
-        .disqualified-manuscript {
+        .disqualified-manuscript,
+        .revenue-center {
           font-size: 1.2rem;
           margin-left: 4px;
         }
@@ -245,6 +260,7 @@ onMounted(async () => {
       justify-content: space-between;
       align-items: center;
       height: 60px;
+      // margin: 0 20px;
       padding: 0 20px;
       background-color: orange;
 

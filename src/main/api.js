@@ -71,7 +71,7 @@ export const getHotActivities = async (cookies, pn) => {
   const url = 'https://api.bilibili.com/x/activity_components/video_activity/hot_activity'
   const headers = {
     Cookie: `SESSDATA=${SESSDATA}`,
-    Referer: `https://www.bilibili.com/blackboard/era/reward-activity-list-page.html`,
+    Referer: 'https://www.bilibili.com/blackboard/era/reward-activity-list-page.html',
     'User-Agent':
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
   }
@@ -90,7 +90,7 @@ export const fetchSessionMsgs = async (cookies, end_seqno) => {
   const url = 'https://api.vc.bilibili.com/svr_sync/v1/svr_sync/fetch_session_msgs'
   const headers = {
     Cookie: `SESSDATA=${SESSDATA}`,
-    Referer: `https://message.bilibili.com/`,
+    Referer: 'https://message.bilibili.com/',
     'User-Agent':
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
   }
@@ -110,7 +110,7 @@ export const searchAll = async (cookies, keyword) => {
   const url = 'https://api.bilibili.com/x/web-interface/wbi/search/all/v2'
   const headers = {
     Cookie: `SESSDATA=${SESSDATA}`,
-    Referer: `https://search.bilibili.com/all?`,
+    Referer: 'https://search.bilibili.com/all?',
     'User-Agent':
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
   }
@@ -119,6 +119,27 @@ export const searchAll = async (cookies, keyword) => {
     params: {
       keyword
     }
+  })
+  return response.data
+}
+
+export const getRevenueData = async (cookies, currentPage) => {
+  const SESSDATA = cookies[0].value.replace(/,/g, '%2C')
+  const url = 'https://pay.bilibili.com/payplatform/cashier/bk/trans/list'
+  const headers = {
+    Cookie: `SESSDATA=${SESSDATA}`,
+    Referer: 'https://pay.bilibili.com/pay-v2/shell/bill',
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36'
+  }
+  const payload = {
+    currentPage,
+    pageSize: 20,
+    sdkVersion: '1.1.7',
+    traceId: Math.floor(Date.now() / 1000)
+  }
+  const response = await axios.post(url, payload, {
+    headers
   })
   return response.data
 }

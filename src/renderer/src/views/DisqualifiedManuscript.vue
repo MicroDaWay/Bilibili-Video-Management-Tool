@@ -15,7 +15,7 @@ const getAllDisqualified = async () => {
   tableData.value = result
 }
 
-const fetchSessionMsgsProgress = (event, item) => {
+const fetchSessionMsgsProcess = (event, item) => {
   tableData.value.push({ ...item })
 }
 
@@ -28,14 +28,11 @@ const fetchSessionMsgsComplete = async () => {
   })
 }
 
-let unsubscribeProgress = null
+let unsubscribeProcess = null
 let unsubscribeComplete = null
 
 onMounted(async () => {
-  unsubscribeProgress = window.ipcRenderer.on(
-    'fetch-session-msgs-progress',
-    fetchSessionMsgsProgress
-  )
+  unsubscribeProcess = window.ipcRenderer.on('fetch-session-msgs-process', fetchSessionMsgsProcess)
   unsubscribeComplete = window.ipcRenderer.on(
     'fetch-session-msgs-complete',
     fetchSessionMsgsComplete
@@ -44,9 +41,9 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  unsubscribeProgress?.()
+  unsubscribeProcess?.()
   unsubscribeComplete?.()
-  unsubscribeProgress = null
+  unsubscribeProcess = null
   unsubscribeComplete = null
 })
 </script>

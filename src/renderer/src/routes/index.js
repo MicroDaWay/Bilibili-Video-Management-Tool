@@ -3,8 +3,9 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const routes = [
   { path: '/', redirect: '/home' },
   { path: '/home', component: () => import('@/views/Home.vue') },
-  { path: '/hot-activities', component: () => import('@/views/HotActivities.vue') },
   { path: '/manuscript-management', component: () => import('@/views/ManuscriptManagement.vue') },
+  { path: '/hot-activities', component: () => import('@/views/HotActivities.vue') },
+  { path: '/revenue-center', component: () => import('@/views/RevenueCenter.vue') },
   { path: '/update-database', component: () => import('@/views/UpdateDatabase.vue') },
   {
     path: '/disqualified-manuscript',
