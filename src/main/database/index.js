@@ -145,7 +145,7 @@ export const getPlan = (tag) => {
 
 export const getAllPlans = () => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM plan').all()
+  return db.prepare('SELECT * FROM plan ORDER BY event_end_time ASC').all()
 }
 
 export const deletePlan = (id) => {
@@ -176,14 +176,21 @@ export const updateManuscript = (item) => {
 
 export const getAllManuscript = () => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM manuscript').all()
+  return db.prepare('SELECT * FROM manuscript ORDER BY post_time DESC').all()
+}
+
+export const getManuscriptByPage = ({ currentPage, pageSize }) => {
+  const db = getDatabase()
+  return db
+    .prepare(`SELECT * FROM manuscript ORDER BY post_time DESC LIMIT ? OFFSET ?`)
+    .all(pageSize, (currentPage - 1) * pageSize)
 }
 
 export const getViewLessOneHundred = () => {
   const db = getDatabase()
   return db
     .prepare(
-      "SELECT * FROM manuscript WHERE view < 100 AND post_time < datetime('now', 'localtime', '-180 days')"
+      "SELECT * FROM manuscript WHERE view < 100 AND post_time < datetime('now', 'localtime', '-180 days') ORDER BY post_time ASC"
     )
     .all()
 }
@@ -199,7 +206,7 @@ export const addHotActivities = (item) => {
 
 export const getAllHotActivities = () => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM hot_activities').all()
+  return db.prepare('SELECT * FROM hot_activities ORDER BY start_time ASC').all()
 }
 
 export const addDisqualified = (item) => {
@@ -211,7 +218,7 @@ export const addDisqualified = (item) => {
 
 export const getAllDisqualified = () => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM disqualified').all()
+  return db.prepare('SELECT * FROM disqualified ORDER BY disqualified_time DESC').all()
 }
 
 export const getDisqualified = (bvid) => {
@@ -230,5 +237,12 @@ export const addRevenue = (item) => {
 
 export const getAllRevenue = () => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM revenue').all()
+  return db.prepare('SELECT * FROM revenue ORDER BY create_time DESC').all()
+}
+
+export const getRevenueByPage = ({ currentPage, pageSize }) => {
+  const db = getDatabase()
+  return db
+    .prepare(`SELECT * FROM revenue ORDER BY create_time DESC LIMIT ? OFFSET ?`)
+    .all(pageSize, (currentPage - 1) * pageSize)
 }

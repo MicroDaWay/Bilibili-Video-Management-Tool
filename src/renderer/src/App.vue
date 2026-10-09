@@ -1,13 +1,13 @@
 <script setup>
 import { House, Fold, Expand, Star, Memo, Coin, Search, Lock, Goods } from '@element-plus/icons-vue'
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import QRCode from 'qrcode'
 import { sleep } from '@/utils'
 import { proxyImage } from './utils'
 import refreshImage from '@/assets/refresh.png'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
-const isCollapse = ref(false)
+const isCollapse = ref(true)
 const dialogVisible = ref(false)
 const qrcodeRef = ref(null)
 const qrcodeUrl = ref('')
@@ -92,12 +92,24 @@ const handleLogout = async () => {
 }
 
 const router = useRouter()
+const route = useRoute()
 
 const handleSearchMenuClick = () => {
   if (router.currentRoute.value.path !== '/view-less-one-hundred') {
     router.push('/view-less-one-hundred')
   }
 }
+
+watch(
+  () => route.path,
+  (newPath) => {
+    if (newPath === '/home') {
+      isCollapse.value = true
+    } else {
+      isCollapse.value = false
+    }
+  }
+)
 
 onMounted(async () => {
   await getNavInfo()

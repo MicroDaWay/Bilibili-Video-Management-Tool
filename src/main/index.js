@@ -17,7 +17,9 @@ import {
   getAllPlans,
   getAllRevenue,
   getDisqualified,
+  getManuscriptByPage,
   getPlan,
+  getRevenueByPage,
   getViewLessOneHundred,
   initDatabase,
   updateManuscript,
@@ -435,6 +437,14 @@ app.whenReady().then(() => {
 
   ipcMain.handle('get-all-revenue', () => {
     return getAllRevenue()
+  })
+
+  ipcMain.handle('get-revenue-by-page', (event, data) => {
+    return getRevenueByPage(data)
+  })
+
+  ipcMain.handle('get-manuscript-by-page', (event, data) => {
+    return getManuscriptByPage(data)
   })
 
   initDatabase()

@@ -19,6 +19,7 @@ const formData = {
   search_time: ''
 }
 const form = ref({ ...formData })
+const postCountIds = ref(new Set())
 
 const extractNumbers = (str) => {
   const matches = str.match(/>=\s*(\d+(?:\.\d+)?)/g)
@@ -80,12 +81,19 @@ const handleEdit = (row) => {
   isEdit.value = true
   rowId.value = row.id
   form.value = JSON.parse(JSON.stringify(row))
+  postCountIds.value.delete(row.id)
   dialogVisible.value = true
 }
 
 const handleSubmit = async () => {
   const data = JSON.parse(JSON.stringify(form.value))
   if (isEdit.value) {
+    const oldPlan = tableData.value.find((plan) => plan.id === rowId.value)
+    if (oldPlan.post_count !== data.post_count) {
+      postCountIds.value.add(rowId.value)
+    } else {
+      postCountIds.value.delete(rowId.value)
+    }
     await window.ipcRenderer.invoke('plan:update', { id: rowId.value, ...data })
     ElMessage({
       type: 'success',
@@ -146,7 +154,7 @@ onMounted(async () => {
       :default-sort="{ prop: 'event_end_time', order: 'ascending' }"
       :row-class-name="({ row }) => (row.isMatch ? 'match-row' : '')"
     >
-      <el-table-column prop="event_name" label="活动名称" align="center" min-width="280" />
+      <el-table-column prop="event_name" label="活动名称" align="center" min-width="220" />
       <el-table-column prop="tag" label="投稿标签" align="center" min-width="200" />
       <el-table-column
         prop="event_start_time"
@@ -155,12 +163,23 @@ onMounted(async () => {
         min-width="130"
       />
       <el-table-column prop="event_end_time" label="活动结束时间" align="center" min-width="130" />
-      <el-table-column prop="event_rules" label="活动规则" align="center" min-width="220" />
+      <el-table-column prop="event_rules" label="活动规则" align="center" min-width="240">
+        <template #default="{ row }">
+          <span :class="{ 'post-days-text': row.event_rules?.includes('投稿天数') }">
+            {{ row.event_rules }}
+          </span>
+        </template>
+      </el-table-column>
       <el-table-column prop="post_count" label="投稿量" align="center" min-width="80">
+        <template #default="{ row }">
+          <span :class="{ 'post-count-change': postCountIds.has(row.id) }">
+            {{ row.post_count }}
+          </span>
+        </template>
       </el-table-column>
       <el-table-column prop="view" label="播放量" align="center" min-width="80" />
-      <el-table-column prop="money" label="瓜分金额" align="center" min-width="90" />
       <el-table-column prop="search_time" label="查询时间" align="center" min-width="180" />
+      <el-table-column prop="money" label="瓜分金额" align="center" min-width="90" />
       <el-table-column label="操作" align="center" min-width="180" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" @click="handleEdit(row)">编辑</el-button>
@@ -231,6 +250,14 @@ onMounted(async () => {
   :deep(.match-row) {
     background-color: #00b050;
     color: #000000;
+  }
+
+  .post-count-change {
+    color: red;
+  }
+
+  .post-days-text {
+    color: orange;
   }
 
   .add {
