@@ -32,6 +32,7 @@ const getRevenueDataProcess = (event, item) => {
 
 const getRevenueDataComplete = async () => {
   loading.value = false
+  await getAllRevenue()
   await window.ipcRenderer.invoke('dialog:show-message-box', {
     type: 'info',
     title: '收益中心',

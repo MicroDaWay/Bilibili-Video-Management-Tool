@@ -12,13 +12,15 @@ import {
   addRevenue,
   deletePlan,
   getAllDisqualified,
-  getAllHotActivities,
   getAllManuscript,
   getAllPlans,
   getAllRevenue,
   getDisqualified,
+  getHotActivitiesWithin7Days,
   getManuscriptByPage,
+  getMonthlyRevenue,
   getPlan,
+  getPlanById,
   getRevenueByPage,
   getViewLessOneHundred,
   initDatabase,
@@ -229,6 +231,64 @@ app.whenReady().then(() => {
     }
   })
 
+  // 从首页搜索稿件
+  ipcMain.handle('search-manuscripts-from-home', async (event, row) => {
+    let count = 0
+    let totalView = 0
+    let pn = 1
+    let postTime = null
+
+    const cookies = await customSession.cookies.get({
+      url: 'https://www.bilibili.com',
+      name: 'SESSDATA'
+    })
+
+    const result = await getPlanById(row.id)
+    if (!result) return true
+    const { event_start_time, event_end_time } = result
+
+    try {
+      while (true) {
+        await sleep(1)
+        const resultData = await getManuscripts(cookies, pn)
+        const arc_audits = resultData.data.arc_audits
+
+        for (const item of arc_audits) {
+          const stat = item.stat
+          const archive = item.Archive
+          const bvid = archive.bvid
+          const tag = archive.tag
+          const view = stat.view
+          const ptime = archive.ptime
+          postTime = archive.ptime
+
+          if (
+            formatTime(ptime) >= event_start_time &&
+            formatTime(ptime) <= event_end_time &&
+            tag.includes(row.tag) &&
+            !getDisqualified(bvid)
+          ) {
+            count++
+            totalView += view
+          }
+        }
+
+        if (formatTime(postTime) < event_start_time) {
+          updatePlan({
+            ...result,
+            post_count: count,
+            view: totalView,
+            search_time: formatTime2(Date.now())
+          })
+          break
+        }
+        pn++
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  })
+
   // 获取热门活动
   ipcMain.handle('get-hot-activities', async (event) => {
     let pn = 1
@@ -274,8 +334,8 @@ app.whenReady().then(() => {
   })
 
   // 获取所有热门活动
-  ipcMain.handle('get-all-hot-activities', () => {
-    return getAllHotActivities()
+  ipcMain.handle('get-hot-activities-within-7days', () => {
+    return getHotActivitiesWithin7Days()
   })
 
   // 更新数据库
@@ -357,7 +417,7 @@ app.whenReady().then(() => {
           const content = message.content
           const timestamp = message.timestamp
           time = formatTime3(timestamp)
-          const text = '由于不符合本次征稿活动的规则，故无法参与本次活动的评选'
+          const text = '不符合本次征稿活动的规则'
           if (!content.includes(text)) continue
           const match = content.match(/(BV[a-zA-Z0-9]{10})/)
 
@@ -414,13 +474,14 @@ app.whenReady().then(() => {
         totalPage = page.totalPage
 
         for (const item of result) {
-          const { ctime, orderNo, label, brokerage, title } = item
+          const { ctime, orderNo, label, brokerage, title, statusDesc } = item
           if (title === '历史贝壳收入一次性报税') continue
           const itemData = {
             orderNo,
             label,
             title,
             brokerage,
+            status_desc: statusDesc,
             create_time: ctime
           }
           addRevenue(itemData)
@@ -445,6 +506,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle('get-manuscript-by-page', (event, data) => {
     return getManuscriptByPage(data)
+  })
+
+  ipcMain.handle('get-monthly-revenue', () => {
+    return getMonthlyRevenue()
   })
 
   initDatabase()

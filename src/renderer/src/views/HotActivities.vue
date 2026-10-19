@@ -7,8 +7,8 @@ const getHotActivities = async () => {
   await window.ipcRenderer.invoke('get-hot-activities')
 }
 
-const getAllHotActivities = async () => {
-  const result = await window.ipcRenderer.invoke('get-all-hot-activities')
+const getHotActivitiesWithin7Days = async () => {
+  const result = await window.ipcRenderer.invoke('get-hot-activities-within-7days')
   tableData.value = result
 }
 
@@ -38,7 +38,7 @@ onMounted(async () => {
     'get-hot-activities-complete',
     getHotActivitiesComplete
   )
-  await getAllHotActivities()
+  await getHotActivitiesWithin7Days()
 })
 
 onUnmounted(() => {

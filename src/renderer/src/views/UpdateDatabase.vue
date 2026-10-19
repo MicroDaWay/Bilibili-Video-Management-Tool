@@ -32,6 +32,7 @@ const updateDatabaseProcess = async (event, item) => {
 
 const updateDatabaseComplete = async () => {
   loading.value = false
+  await getAllManuscript()
   await window.ipcRenderer.invoke('dialog:show-message-box', {
     type: 'info',
     title: '更新数据库',

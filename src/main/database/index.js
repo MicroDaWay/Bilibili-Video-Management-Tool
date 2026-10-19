@@ -74,6 +74,7 @@ const createRevenueTable = () => {
       label TEXT NOT NULL,
       title TEXT NOT NULL,
       brokerage REAL NOT NULL,
+      status_desc TEXT NOT NULL,
       create_time TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
@@ -143,6 +144,11 @@ export const getPlan = (tag) => {
   return db.prepare('SELECT * FROM plan WHERE tag LIKE ?').get(`%${tag}%`)
 }
 
+export const getPlanById = (id) => {
+  const db = getDatabase()
+  return db.prepare('SELECT * FROM plan WHERE id = ?').get(id)
+}
+
 export const getAllPlans = () => {
   const db = getDatabase()
   return db.prepare('SELECT * FROM plan ORDER BY event_end_time ASC').all()
@@ -182,7 +188,7 @@ export const getAllManuscript = () => {
 export const getManuscriptByPage = ({ currentPage, pageSize }) => {
   const db = getDatabase()
   return db
-    .prepare(`SELECT * FROM manuscript ORDER BY post_time DESC LIMIT ? OFFSET ?`)
+    .prepare('SELECT * FROM manuscript ORDER BY post_time DESC LIMIT ? OFFSET ?')
     .all(pageSize, (currentPage - 1) * pageSize)
 }
 
@@ -204,9 +210,13 @@ export const addHotActivities = (item) => {
   )
 }
 
-export const getAllHotActivities = () => {
+export const getHotActivitiesWithin7Days = () => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM hot_activities ORDER BY start_time ASC').all()
+  return db
+    .prepare(
+      "SELECT * FROM hot_activities WHERE start_time >= datetime('now', 'localtime', '-7 days') ORDER BY start_time ASC"
+    )
+    .all()
 }
 
 export const addDisqualified = (item) => {
@@ -230,9 +240,9 @@ export const addRevenue = (item) => {
   const db = getDatabase()
   return db
     .prepare(
-      'INSERT OR IGNORE INTO revenue (orderNo, label, title, brokerage, create_time) VALUES (?, ?, ?, ?, ?)'
+      'INSERT OR IGNORE INTO revenue (orderNo, label, title, brokerage, status_desc, create_time) VALUES (?, ?, ?, ?, ?, ?)'
     )
-    .run(item.orderNo, item.label, item.title, item.brokerage, item.create_time)
+    .run(item.orderNo, item.label, item.title, item.brokerage, item.status_desc, item.create_time)
 }
 
 export const getAllRevenue = () => {
@@ -243,6 +253,15 @@ export const getAllRevenue = () => {
 export const getRevenueByPage = ({ currentPage, pageSize }) => {
   const db = getDatabase()
   return db
-    .prepare(`SELECT * FROM revenue ORDER BY create_time DESC LIMIT ? OFFSET ?`)
+    .prepare('SELECT * FROM revenue ORDER BY create_time DESC LIMIT ? OFFSET ?')
     .all(pageSize, (currentPage - 1) * pageSize)
+}
+
+export const getMonthlyRevenue = () => {
+  const db = getDatabase()
+  return db
+    .prepare(
+      "SELECT strftime('%Y-%m', create_time) AS month, ROUND(SUM(brokerage), 2) AS total_brokerage FROM revenue WHERE label != '个人提现' AND status_desc != '撤销转入' GROUP BY strftime('%Y-%m', create_time) ORDER BY month DESC"
+    )
+    .all()
 }

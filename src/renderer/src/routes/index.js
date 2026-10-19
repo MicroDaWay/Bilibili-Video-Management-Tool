@@ -11,7 +11,8 @@ const routes = [
     path: '/disqualified-manuscript',
     component: () => import('@/views/DisqualifiedManuscript.vue')
   },
-  { path: '/view-less-one-hundred', component: () => import('@/views/ViewLessOneHundred.vue') }
+  { path: '/view-less-one-hundred', component: () => import('@/views/ViewLessOneHundred.vue') },
+  { path: '/monthly-revenue', component: () => import('@/views/MonthlyRevenue.vue') }
 ]
 
 const router = createRouter({

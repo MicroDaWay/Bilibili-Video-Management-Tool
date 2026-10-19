@@ -85,7 +85,6 @@ const handleLogin = async () => {
 }
 
 const handleLogout = async () => {
-  console.log('handleLogout')
   // await window.ipcRenderer.invoke('logout')
   // await getNavInfo()
   // localStorage.setItem('isLogin', navInfo.value.isLogin)
@@ -94,8 +93,8 @@ const handleLogout = async () => {
 const router = useRouter()
 const route = useRoute()
 
-const handleSearchMenuClick = () => {
-  if (router.currentRoute.value.path !== '/view-less-one-hundred') {
+const handleSubMenuOpen = (index) => {
+  if (index === 'search') {
     router.push('/view-less-one-hundred')
   }
 }
@@ -126,6 +125,7 @@ onMounted(async () => {
           :default-active="$route.path"
           :collapse="isCollapse"
           :router="true"
+          @open="handleSubMenuOpen"
         >
           <el-menu-item index="/home">
             <el-icon><House /></el-icon>
@@ -151,13 +151,16 @@ onMounted(async () => {
             <el-icon><Lock /></el-icon>
             <span class="disqualified-manuscript">活动资格取消稿件</span>
           </el-menu-item>
-          <el-sub-menu index="search" @click="handleSearchMenuClick">
+          <el-sub-menu index="search">
             <template #title>
               <el-icon><Search /></el-icon>
               <span class="search">稿件查询</span>
             </template>
             <el-menu-item index="/view-less-one-hundred" class="view-less-one-hundred">
               播放量小于100的稿件
+            </el-menu-item>
+            <el-menu-item index="/monthly-revenue" class="monthly-revenue">
+              每月的收益
             </el-menu-item>
           </el-sub-menu>
         </el-menu></el-scrollbar
@@ -254,7 +257,8 @@ onMounted(async () => {
           margin-left: 4px;
         }
 
-        .view-less-one-hundred {
+        .view-less-one-hundred,
+        .monthly-revenue {
           font-size: 1.2rem;
           background-color: #f6f6f6;
         }

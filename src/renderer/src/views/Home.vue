@@ -1,9 +1,10 @@
 <script setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { onMounted, ref } from 'vue'
-import { formatTime } from '@/utils'
+import { formatTime3 } from '../utils'
 
 const dialogVisible = ref(false)
+const isLoading = ref(false)
 const isEdit = ref(false)
 const rowId = ref(null)
 const tableData = ref([])
@@ -48,7 +49,7 @@ const getPlanList = async () => {
   const expiredIds = []
   const validPlans = []
   const plans = await window.ipcRenderer.invoke('plan:get-all')
-  const currentTime = formatTime(Math.floor(Date.now() / 1000))
+  const currentTime = formatTime3(Math.floor(Date.now() / 1000))
 
   for (const plan of plans) {
     if (plan.event_end_time < currentTime) {
@@ -121,6 +122,13 @@ const handleSubmit = async () => {
   }
 }
 
+const handleSearch = async (row) => {
+  isLoading.value = true
+  await window.ipcRenderer.invoke('search-manuscripts-from-home', JSON.parse(JSON.stringify(row)))
+  await getPlanList()
+  isLoading.value = false
+}
+
 const hanleDelete = (row) => {
   ElMessageBox.confirm('你确定要删除吗', '警告', {
     type: 'warning',
@@ -180,9 +188,12 @@ onMounted(async () => {
       <el-table-column prop="view" label="播放量" align="center" min-width="80" />
       <el-table-column prop="search_time" label="查询时间" align="center" min-width="180" />
       <el-table-column prop="money" label="瓜分金额" align="center" min-width="90" />
-      <el-table-column label="操作" align="center" min-width="180" fixed="right">
+      <el-table-column label="操作" align="center" min-width="230" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" @click="handleEdit(row)">编辑</el-button>
+          <el-button v-loading.fullscreen.lock="isLoading" type="warning" @click="handleSearch(row)"
+            >搜索</el-button
+          >
           <el-button type="danger" @click="hanleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
