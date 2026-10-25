@@ -2,14 +2,14 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 
 const tableData = ref([])
-const loading = ref(false)
+const isLoading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(100)
 const total = ref(0)
 
 const handleClick = async () => {
   tableData.value = []
-  loading.value = true
+  isLoading.value = true
   await window.ipcRenderer.invoke('update-database')
 }
 
@@ -26,13 +26,15 @@ const getManuscriptByPage = async () => {
   tableData.value = result
 }
 
-const updateDatabaseProcess = async (event, item) => {
-  tableData.value.push({ ...item })
+const updateDatabaseProcess = async (event, tempArray) => {
+  tableData.value.push(...tempArray)
+  total.value = tableData.value.length
 }
 
 const updateDatabaseComplete = async () => {
-  loading.value = false
+  isLoading.value = false
   await getAllManuscript()
+  await getManuscriptByPage()
   await window.ipcRenderer.invoke('dialog:show-message-box', {
     type: 'info',
     title: '更新数据库',
@@ -45,6 +47,7 @@ const handleCurrentChange = async () => {
 }
 
 const handleSizeChange = async () => {
+  currentPage.value = 1
   await getManuscriptByPage()
 }
 
@@ -69,10 +72,11 @@ onUnmounted(() => {
 <template>
   <div class="update-database">
     <el-table
-      v-loading="loading"
-      element-loading-text="更新中..."
+      v-loading.fullscreen.lock="isLoading"
+      element-loading-text="Loading..."
       element-loading-background="rgba(255, 255, 255, 0.5)"
       :data="tableData"
+      highlight-current-row
       border
       :default-sort="{ prop: 'post_time', order: 'descending' }"
       style="width: 100%; font-size: 1.2rem; height: calc(100vh - 165px)"

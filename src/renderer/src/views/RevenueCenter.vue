@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 
-const loading = ref(false)
+const isLoading = ref(false)
 const tableData = ref([])
 const currentPage = ref(1)
 const pageSize = ref(100)
@@ -9,7 +9,7 @@ const total = ref(0)
 
 const handleClick = async () => {
   tableData.value = []
-  loading.value = true
+  isLoading.value = true
   await window.ipcRenderer.invoke('get-revenue-data')
 }
 
@@ -26,13 +26,15 @@ const getRevenueByPage = async () => {
   tableData.value = result
 }
 
-const getRevenueDataProcess = (event, item) => {
-  tableData.value.push({ ...item })
+const getRevenueDataProcess = (event, tempArray) => {
+  tableData.value.push(...tempArray)
+  total.value = tableData.value.length
 }
 
 const getRevenueDataComplete = async () => {
-  loading.value = false
+  isLoading.value = false
   await getAllRevenue()
+  await getRevenueByPage()
   await window.ipcRenderer.invoke('dialog:show-message-box', {
     type: 'info',
     title: '收益中心',
@@ -45,6 +47,7 @@ const handleCurrentChange = async () => {
 }
 
 const handleSizeChange = async () => {
+  currentPage.value = 1
   await getRevenueByPage()
 }
 
@@ -69,10 +72,11 @@ onUnmounted(() => {
 <template>
   <div class="revenue-center">
     <el-table
-      v-loading="loading"
-      element-loading-text="更新中..."
+      v-loading.fullscreen.lock="isLoading"
+      element-loading-text="Loading..."
       element-loading-background="rgba(255, 255, 255, 0.5)"
       :data="tableData"
+      highlight-current-row
       border
       :default-sort="{ prop: 'create_time', order: 'descending' }"
       style="width: 100%; font-size: 1.2rem; height: calc(100vh - 165px)"

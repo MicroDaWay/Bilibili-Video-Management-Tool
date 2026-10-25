@@ -107,7 +107,10 @@ export const getDatabase = () => {
 export const addPlan = (form) => {
   const db = getDatabase()
   db.prepare(
-    'INSERT INTO plan (event_name, event_start_time, event_end_time, event_rules, post_count, view, money, tag, search_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    `
+    INSERT INTO plan (event_name, event_start_time, event_end_time, event_rules, post_count, view, money, tag, search_time)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `
   ).run(
     form.event_name,
     form.event_start_time,
@@ -124,7 +127,11 @@ export const addPlan = (form) => {
 export const updatePlan = (form) => {
   const db = getDatabase()
   db.prepare(
-    "UPDATE plan SET event_name = ?, event_start_time = ?, event_end_time = ?, event_rules = ?, post_count = ?, view = ?, money = ?, tag = ?, search_time = ?, updated_at = datetime('now', 'localtime') WHERE id = ?"
+    `
+    UPDATE plan
+    SET event_name = ?, event_start_time = ?, event_end_time = ?, event_rules = ?, post_count = ?, view = ?, money = ?, tag = ?, search_time = ?, updated_at = datetime('now', 'localtime')
+    WHERE id = ?
+    `
   ).run(
     form.event_name,
     form.event_start_time,
@@ -141,28 +148,60 @@ export const updatePlan = (form) => {
 
 export const getPlan = (tag) => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM plan WHERE tag LIKE ?').get(`%${tag}%`)
+  return db
+    .prepare(
+      `
+      SELECT *
+      FROM plan
+      WHERE tag LIKE ?
+      `
+    )
+    .get(`%${tag}%`)
 }
 
 export const getPlanById = (id) => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM plan WHERE id = ?').get(id)
+  return db
+    .prepare(
+      `
+      SELECT *
+      FROM plan
+      WHERE id = ?
+      `
+    )
+    .get(id)
 }
 
 export const getAllPlans = () => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM plan ORDER BY event_end_time ASC').all()
+  return db
+    .prepare(
+      `
+      SELECT *
+      FROM plan
+      ORDER BY event_end_time ASC
+      `
+    )
+    .all()
 }
 
 export const deletePlan = (id) => {
   const db = getDatabase()
-  db.prepare('DELETE FROM plan WHERE id = ?').run(id)
+  db.prepare(
+    `
+    DELETE FROM plan
+    WHERE id = ?
+    `
+  ).run(id)
 }
 
 export const addManuscript = (item) => {
   const db = getDatabase()
   db.prepare(
-    'INSERT OR IGNORE INTO manuscript (bvid, title, tag, view, post_time) VALUES (?, ?, ?, ?, ?)'
+    `
+    INSERT OR IGNORE INTO manuscript (bvid, title, tag, view, post_time)
+    VALUES (?, ?, ?, ?, ?)
+    `
   ).run(item.bvid, item.title, item.tag, item.view, item.post_time)
 }
 
@@ -170,7 +209,11 @@ export const updateManuscript = (item) => {
   const db = getDatabase()
   const result = db
     .prepare(
-      "UPDATE manuscript SET title = ?, tag = ?, view = ?, post_time = ?, updated_at = datetime('now', 'localtime') WHERE bvid = ?"
+      `
+      UPDATE manuscript
+      SET title = ?, tag = ?, view = ?, post_time = ?, updated_at = datetime('now', 'localtime')
+      WHERE bvid = ?
+      `
     )
     .run(item.title, item.tag, item.view, item.post_time, item.bvid)
 
@@ -182,13 +225,27 @@ export const updateManuscript = (item) => {
 
 export const getAllManuscript = () => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM manuscript ORDER BY post_time DESC').all()
+  return db
+    .prepare(
+      `
+      SELECT *
+      FROM manuscript
+      ORDER BY post_time DESC
+      `
+    )
+    .all()
 }
 
 export const getManuscriptByPage = ({ currentPage, pageSize }) => {
   const db = getDatabase()
   return db
-    .prepare('SELECT * FROM manuscript ORDER BY post_time DESC LIMIT ? OFFSET ?')
+    .prepare(
+      `
+      SELECT * FROM manuscript
+      ORDER BY post_time DESC
+      LIMIT ? OFFSET ?
+      `
+    )
     .all(pageSize, (currentPage - 1) * pageSize)
 }
 
@@ -196,25 +253,35 @@ export const getViewLessOneHundred = () => {
   const db = getDatabase()
   return db
     .prepare(
-      "SELECT * FROM manuscript WHERE view < 100 AND post_time < datetime('now', 'localtime', '-180 days') ORDER BY post_time ASC"
+      `
+      SELECT * FROM manuscript
+      WHERE view < 100 AND post_time < datetime('now', 'localtime', '-180 days')
+      ORDER BY post_time ASC
+      `
     )
     .all()
 }
 
 export const addHotActivities = (item) => {
   const db = getDatabase()
-  db.prepare('INSERT OR IGNORE INTO hot_activities (name, url, start_time) VALUES (?, ?, ?)').run(
-    item.name,
-    item.url,
-    item.start_time
-  )
+  db.prepare(
+    `
+    INSERT OR IGNORE INTO hot_activities (name, url, start_time)
+    VALUES (?, ?, ?)
+    `
+  ).run(item.name, item.url, item.start_time)
 }
 
 export const getHotActivitiesWithin7Days = () => {
   const db = getDatabase()
   return db
     .prepare(
-      "SELECT * FROM hot_activities WHERE start_time >= datetime('now', 'localtime', '-7 days') ORDER BY start_time ASC"
+      `
+      SELECT *
+      FROM hot_activities
+      WHERE start_time >= datetime('now', 'localtime', '-7 days')
+      ORDER BY start_time ASC
+      `
     )
     .all()
 }
@@ -222,38 +289,75 @@ export const getHotActivitiesWithin7Days = () => {
 export const addDisqualified = (item) => {
   const db = getDatabase()
   db.prepare(
-    'INSERT OR IGNORE INTO disqualified (bvid, title, view, tag, disqualified_time) VALUES (?, ?, ?, ?, ?)'
+    `
+    INSERT OR IGNORE INTO disqualified (bvid, title, view, tag, disqualified_time)
+    VALUES (?, ?, ?, ?, ?)
+    `
   ).run(item.bvid, item.title, item.view, item.tag, item.disqualified_time)
 }
 
 export const getAllDisqualified = () => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM disqualified ORDER BY disqualified_time DESC').all()
+  return db
+    .prepare(
+      `
+      SELECT *
+      FROM disqualified
+      ORDER BY disqualified_time DESC
+      `
+    )
+    .all()
 }
 
 export const getDisqualified = (bvid) => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM disqualified WHERE bvid = ?').get(bvid)
+  return db
+    .prepare(
+      `
+      SELECT *
+      FROM disqualified
+      WHERE bvid = ?
+      `
+    )
+    .get(bvid)
 }
 
 export const addRevenue = (item) => {
   const db = getDatabase()
   return db
     .prepare(
-      'INSERT OR IGNORE INTO revenue (orderNo, label, title, brokerage, status_desc, create_time) VALUES (?, ?, ?, ?, ?, ?)'
+      `
+      INSERT OR IGNORE INTO revenue (orderNo, label, title, brokerage, status_desc, create_time)
+      VALUES (?, ?, ?, ?, ?, ?)
+      `
     )
     .run(item.orderNo, item.label, item.title, item.brokerage, item.status_desc, item.create_time)
 }
 
 export const getAllRevenue = () => {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM revenue ORDER BY create_time DESC').all()
+  return db
+    .prepare(
+      `
+      SELECT *
+      FROM revenue
+      ORDER BY create_time DESC
+      `
+    )
+    .all()
 }
 
 export const getRevenueByPage = ({ currentPage, pageSize }) => {
   const db = getDatabase()
   return db
-    .prepare('SELECT * FROM revenue ORDER BY create_time DESC LIMIT ? OFFSET ?')
+    .prepare(
+      `
+      SELECT *
+      FROM revenue
+      ORDER BY create_time DESC
+      LIMIT ? OFFSET ?
+      `
+    )
     .all(pageSize, (currentPage - 1) * pageSize)
 }
 
@@ -261,7 +365,30 @@ export const getMonthlyRevenue = () => {
   const db = getDatabase()
   return db
     .prepare(
-      "SELECT strftime('%Y-%m', create_time) AS month, ROUND(SUM(brokerage), 2) AS total_brokerage FROM revenue WHERE label != '个人提现' AND status_desc != '撤销转入' GROUP BY strftime('%Y-%m', create_time) ORDER BY month DESC"
+      `
+      SELECT strftime('%Y-%m', create_time) AS month,
+            ROUND(SUM(brokerage), 2) AS total_brokerage
+      FROM revenue
+      WHERE label != '个人提现'
+      GROUP BY strftime('%Y-%m', create_time)
+      ORDER BY month DESC
+      `
+    )
+    .all()
+}
+
+export const getAnnualRevenue = () => {
+  const db = getDatabase()
+  return db
+    .prepare(
+      `
+      SELECT strftime('%Y', create_time) AS year,
+             ROUND(SUM(brokerage), 2) AS total_brokerage
+      FROM revenue
+      WHERE label != '个人提现'
+      GROUP BY strftime('%Y', create_time)
+      ORDER BY year DESC
+      `
     )
     .all()
 }

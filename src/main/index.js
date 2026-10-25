@@ -15,6 +15,7 @@ import {
   getAllManuscript,
   getAllPlans,
   getAllRevenue,
+  getAnnualRevenue,
   getDisqualified,
   getHotActivitiesWithin7Days,
   getManuscriptByPage,
@@ -342,6 +343,7 @@ app.whenReady().then(() => {
   ipcMain.handle('update-database', async (event) => {
     let pn = 1
     let totalPage = 1
+    let tempArray = []
     const cookies = await customSession.cookies.get({
       url: 'https://www.bilibili.com',
       name: 'SESSDATA'
@@ -370,10 +372,14 @@ app.whenReady().then(() => {
             view,
             post_time: formatTime(ptime)
           }
-          event.sender.send('update-database-process', itemData)
+          tempArray.push(itemData)
           const result = updateManuscript(itemData)
           if (!result) {
             addManuscript(itemData)
+          }
+          if (tempArray.length >= 100) {
+            event.sender.send('update-database-process', tempArray)
+            tempArray = []
           }
         }
         pn++
@@ -460,6 +466,8 @@ app.whenReady().then(() => {
   ipcMain.handle('get-revenue-data', async (event) => {
     let currentPage = 1
     let totalPage = 1
+    let tempArray = []
+
     const cookies = await customSession.cookies.get({
       url: 'https://www.bilibili.com',
       name: 'SESSDATA'
@@ -475,7 +483,12 @@ app.whenReady().then(() => {
 
         for (const item of result) {
           const { ctime, orderNo, label, brokerage, title, statusDesc } = item
-          if (title === '历史贝壳收入一次性报税') continue
+          if (
+            title === '历史贝壳收入一次性报税' ||
+            statusDesc === '提现失败已退回' ||
+            statusDesc === '撤销转入'
+          )
+            continue
           const itemData = {
             orderNo,
             label,
@@ -485,7 +498,11 @@ app.whenReady().then(() => {
             create_time: ctime
           }
           addRevenue(itemData)
-          event.sender.send('get-revenue-data-process', itemData)
+          tempArray.push(itemData)
+          if (tempArray.length >= 100) {
+            event.sender.send('get-revenue-data-process', tempArray)
+            tempArray = []
+          }
         }
         currentPage++
       }
@@ -510,6 +527,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle('get-monthly-revenue', () => {
     return getMonthlyRevenue()
+  })
+
+  ipcMain.handle('get-annual-revenue', () => {
+    return getAnnualRevenue()
   })
 
   initDatabase()

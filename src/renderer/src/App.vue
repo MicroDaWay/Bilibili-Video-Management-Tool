@@ -2,8 +2,7 @@
 import { House, Fold, Expand, Star, Memo, Coin, Search, Lock, Goods } from '@element-plus/icons-vue'
 import { nextTick, onMounted, ref, watch } from 'vue'
 import QRCode from 'qrcode'
-import { sleep } from '@/utils'
-import { proxyImage } from './utils'
+import { sleep, proxyImage } from '@/utils'
 import refreshImage from '@/assets/refresh.png'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -162,6 +161,7 @@ onMounted(async () => {
             <el-menu-item index="/monthly-revenue" class="monthly-revenue">
               每月的收益
             </el-menu-item>
+            <el-menu-item index="/annual-revenue" class="annual-revenue">每年的收益</el-menu-item>
           </el-sub-menu>
         </el-menu></el-scrollbar
       >
@@ -258,7 +258,8 @@ onMounted(async () => {
         }
 
         .view-less-one-hundred,
-        .monthly-revenue {
+        .monthly-revenue,
+        .annual-revenue {
           font-size: 1.2rem;
           background-color: #f6f6f6;
         }

@@ -18,6 +18,7 @@ onMounted(async () => {
   <div class="monthly-revenue">
     <el-table
       :data="tableData"
+      highlight-current-row
       border
       :default-sort="{ prop: 'month', order: 'descending' }"
       style="width: 100%; font-size: 1.2rem; height: calc(100vh - 100px)"

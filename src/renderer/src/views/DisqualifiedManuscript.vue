@@ -2,11 +2,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const tableData = ref([])
-const loading = ref(false)
+const isLoading = ref(false)
 
 const handleClick = async () => {
   tableData.value = []
-  loading.value = true
+  isLoading.value = true
   await window.ipcRenderer.invoke('fetch-session-msgs')
 }
 
@@ -20,7 +20,8 @@ const fetchSessionMsgsProcess = (event, item) => {
 }
 
 const fetchSessionMsgsComplete = async () => {
-  loading.value = false
+  isLoading.value = false
+  await getAllDisqualified()
   await window.ipcRenderer.invoke('dialog:show-message-box', {
     type: 'info',
     title: '活动资格取消稿件',
@@ -51,10 +52,11 @@ onUnmounted(() => {
 <template>
   <div class="disqualified-manuscript">
     <el-table
-      v-loading="loading"
-      element-loading-text="更新中..."
+      v-loading.fullscreen.lock="isLoading"
+      element-loading-text="Loading..."
       element-loading-background="rgba(255, 255, 255, 0.5)"
       :data="tableData"
+      highlight-current-row
       border
       :default-sort="{ prop: 'disqualified_time', order: 'descending' }"
       style="width: 100%; font-size: 1.2rem; height: calc(100vh - 100px)"

@@ -53,6 +53,7 @@ onUnmounted(() => {
   <div class="hot-activities">
     <el-table
       :data="tableData"
+      highlight-current-row
       border
       :default-sort="{ prop: 'start_time', order: 'ascending' }"
       style="width: 100%; font-size: 1.2rem; height: calc(100vh - 100px)"

@@ -156,6 +156,7 @@ onMounted(async () => {
     </div>
     <el-table
       :data="tableData"
+      highlight-current-row
       border
       style="width: 100%; font-size: 1rem"
       height="calc(100vh - 160px)"
@@ -191,7 +192,12 @@ onMounted(async () => {
       <el-table-column label="操作" align="center" min-width="230" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button v-loading.fullscreen.lock="isLoading" type="warning" @click="handleSearch(row)"
+          <el-button
+            v-loading.fullscreen.lock="isLoading"
+            element-loading-text="Loading..."
+            element-loading-background="rgba(255, 255, 255, 0.8)"
+            type="warning"
+            @click="handleSearch(row)"
             >搜索</el-button
           >
           <el-button type="danger" @click="hanleDelete(row)">删除</el-button>
