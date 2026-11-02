@@ -162,6 +162,9 @@ onMounted(async () => {
               每月的收益
             </el-menu-item>
             <el-menu-item index="/annual-revenue" class="annual-revenue">每年的收益</el-menu-item>
+            <el-menu-item index="/search-revenue-by-tag" class="search-revenue-by-tag">
+              根据标签查询收益
+            </el-menu-item>
           </el-sub-menu>
         </el-menu></el-scrollbar
       >
@@ -259,7 +262,8 @@ onMounted(async () => {
 
         .view-less-one-hundred,
         .monthly-revenue,
-        .annual-revenue {
+        .annual-revenue,
+        .search-revenue-by-tag {
           font-size: 1.2rem;
           background-color: #f6f6f6;
         }

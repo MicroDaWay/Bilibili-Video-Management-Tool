@@ -13,7 +13,8 @@ const routes = [
   },
   { path: '/view-less-one-hundred', component: () => import('@/views/ViewLessOneHundred.vue') },
   { path: '/monthly-revenue', component: () => import('@/views/MonthlyRevenue.vue') },
-  { path: '/annual-revenue', component: () => import('@/views/AnnualRevenue.vue') }
+  { path: '/annual-revenue', component: () => import('@/views/AnnualRevenue.vue') },
+  { path: '/search-revenue-by-tag', component: () => import('@/views/SearchRevenueByTag.vue') }
 ]
 
 const router = createRouter({

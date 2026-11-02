@@ -392,3 +392,34 @@ export const getAnnualRevenue = () => {
     )
     .all()
 }
+
+export const searchRevenueByTag = (postTag) => {
+  const db = getDatabase()
+  return db
+    .prepare(
+      `
+      SELECT title, brokerage, create_time,
+             ROUND(SUM(brokerage) OVER (), 2) AS total_brokerage
+      FROM revenue
+      WHERE title LIKE ?
+      ORDER BY create_time DESC
+      `
+    )
+    .all(`%${postTag}%`)
+}
+
+export const getRevenueByTag = ({ tag, currentPage, pageSize }) => {
+  const db = getDatabase()
+  return db
+    .prepare(
+      `
+      SELECT title, brokerage, create_time,
+             ROUND(SUM(brokerage) OVER (), 2) AS total_brokerage
+      FROM revenue
+      WHERE title LIKE ?
+      ORDER BY create_time DESC
+      LIMIT ? OFFSET ?
+      `
+    )
+    .all(`%${tag}%`, pageSize, (currentPage - 1) * pageSize)
+}

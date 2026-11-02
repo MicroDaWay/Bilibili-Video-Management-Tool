@@ -23,8 +23,10 @@ import {
   getPlan,
   getPlanById,
   getRevenueByPage,
+  getRevenueByTag,
   getViewLessOneHundred,
   initDatabase,
+  searchRevenueByTag,
   updateManuscript,
   updatePlan
 } from './database'
@@ -531,6 +533,14 @@ app.whenReady().then(() => {
 
   ipcMain.handle('get-annual-revenue', () => {
     return getAnnualRevenue()
+  })
+
+  ipcMain.handle('search-revenue-by-tag', (event, postTag) => {
+    return searchRevenueByTag(postTag)
+  })
+
+  ipcMain.handle('get-revenue-by-tag', (event, data) => {
+    return getRevenueByTag(data)
   })
 
   initDatabase()

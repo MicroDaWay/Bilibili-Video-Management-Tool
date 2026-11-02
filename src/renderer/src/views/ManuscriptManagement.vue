@@ -7,6 +7,11 @@ const postTag = ref('')
 const isSearching = ref(false)
 const manuscriptList = ref([])
 const listRef = ref(null)
+const autoPlaying = ref(false)
+let autoPlayTimer = null
+let currentIndex = 0
+const CLICK_INTERVAL = 10 * 1000
+const ROUND_INTERVAL = 15 * 60 * 1000
 
 watch(
   () => manuscriptList.value.length,
@@ -19,6 +24,7 @@ watch(
 )
 
 const handleSearch = async () => {
+  stopAutoPlay()
   if (!postTag.value) {
     await window.ipcRenderer.invoke('dialog:show-message-box', {
       type: 'info',
@@ -38,6 +44,50 @@ const handleSearch = async () => {
     })
     isSearching.value = false
   }
+}
+
+const clickCurrentItem = () => {
+  const links = listRef.value?.querySelectorAll('.manuscript-cover a')
+  const target = links?.[currentIndex]
+  if (target) {
+    target.click()
+  }
+}
+
+const stopAutoPlay = () => {
+  autoPlaying.value = false
+  if (autoPlayTimer) {
+    clearInterval(autoPlayTimer)
+    autoPlayTimer = null
+  }
+}
+
+const startNewRound = () => {
+  if (!autoPlaying.value) return
+  currentIndex = 0
+  clickCurrentItem()
+  autoPlayTimer = setTimeout(playNext, CLICK_INTERVAL)
+}
+
+const playNext = () => {
+  if (!autoPlaying.value) return
+  currentIndex++
+  if (currentIndex >= manuscriptList.value.length) {
+    autoPlayTimer = setTimeout(startNewRound, ROUND_INTERVAL)
+    return
+  }
+  clickCurrentItem()
+  autoPlayTimer = setTimeout(playNext, CLICK_INTERVAL)
+}
+
+const handleAutoPlay = () => {
+  if (autoPlaying.value) {
+    stopAutoPlay()
+    return
+  }
+  if (!manuscriptList.value.length) return
+  autoPlaying.value = true
+  startNewRound()
 }
 
 const searchManuscriptsProcess = (event, item) => {
@@ -65,6 +115,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  stopAutoPlay()
   unsubscribeProcess?.()
   unsubscribeComplete?.()
   unsubscribeProcess = null
@@ -92,6 +143,15 @@ onUnmounted(() => {
         @click="handleSearch"
       >
         搜索
+      </el-button>
+      <el-button
+        v-if="manuscriptList.length"
+        type="warning"
+        size="large"
+        style="font-size: 1.2rem; border-radius: 20px; margin-left: 20px"
+        @click="handleAutoPlay"
+      >
+        {{ autoPlaying ? '停止播放' : '自动播放' }}
       </el-button>
     </div>
     <div ref="listRef" class="manuscript-list">
